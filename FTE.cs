@@ -1,26 +1,31 @@
 using System.Xml;
 using System.Text;
-using SUFontTool;
 
-namespace SonicUnleashedFCOConv {
-    public static class FTE {
-        public static List<Structs.Texture> textures = new List<Structs.Texture>();
-        public static List<Structs.Character> characters = new List<Structs.Character>();
-        
-        public static void ReadFTE(string path) {
+
+namespace SUFcoTool
+{
+    public static class FTE
+    {
+        public static List<Texture> textures = new List<Texture>();
+        public static List<Character> characters = new List<Character>();
+
+        public static void ReadFTE(string path)
+        {
             FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
             BinaryReader binaryReader = new BinaryReader(fileStream);
             Encoding UTF8Encoding = Encoding.GetEncoding("UTF-8");
 
-            try {
+            try
+            {
                 // Start Parse
                 binaryReader.ReadInt64();   // This is always the same
 
                 // Textures
                 int textureCount = Common.EndianSwap(binaryReader.ReadInt32());
-                
-                for(int i = 0; i < textureCount; i++) {
-                    Structs.Texture textureData = new Structs.Texture();
+
+                for (int i = 0; i < textureCount; i++)
+                {
+                    Texture textureData = new Texture();
 
                     // Texture Name
                     textureData.textureName = UTF8Encoding.GetString(binaryReader.ReadBytes(Common.EndianSwap(binaryReader.ReadInt32())));
@@ -38,18 +43,20 @@ namespace SonicUnleashedFCOConv {
                 int CurrentID = 100;
                 bool IndexChange = false;
 
-                for(int i = 0; i < charaCount; i++) {
-                    Structs.Character charaData = new Structs.Character();
-                    
+                for (int i = 0; i < charaCount; i++)
+                {
+                    Character charaData = new Character();
+
                     charaData.textureIndex = Common.EndianSwap(binaryReader.ReadInt32());
 
-                    if (charaData.textureIndex == 2 && IndexChange == false) {
+                    if (charaData.textureIndex == 2 && IndexChange == false)
+                    {
                         CurrentID += 100;
                         IndexChange = true;
                     }
 
                     charaData.convID = CurrentID.ToString("X8").Insert(2, " ").Insert(5, " ").Insert(8, " ");
-                    
+
                     var TexSizeX = textures[charaData.textureIndex].textureSizeX;
                     var TexSizeY = textures[charaData.textureIndex].textureSizeY;
 
@@ -62,33 +69,36 @@ namespace SonicUnleashedFCOConv {
                     CurrentID++;
                 }
             }
-            catch (EndOfStreamException e) {
+            catch (EndOfStreamException e)
+            {
                 Console.WriteLine(e);
-                
-                Console.WriteLine("\nERROR: Exception occurred during parsing at: 0x" + unchecked((int)binaryReader.BaseStream.Position).ToString("X")  + ".");
+
+                Console.WriteLine("\nERROR: Exception occurred during parsing at: 0x" + unchecked((int)binaryReader.BaseStream.Position).ToString("X") + ".");
                 Console.WriteLine("There is a structural abnormality within the FTE file!");
                 Console.WriteLine("\nPress Enter to Exit.");
                 Console.Read();
-                
+
                 throw;
             }
-			
+
             binaryReader.Close();
             Console.WriteLine("FTE Read!");
         }
 
-        public static void WriteXML(string path) {
+        public static void WriteXML(string path)
+        {
             File.Delete(Path.Combine(Path.GetFileNameWithoutExtension(path) + ".xml"));
 
-            var xmlWriterSettings = new XmlWriterSettings{ Indent = true };
-            using var writer = XmlWriter.Create(Path.GetDirectoryName(path) + "\\" + 
+            var xmlWriterSettings = new XmlWriterSettings { Indent = true };
+            using var writer = XmlWriter.Create(Path.GetDirectoryName(path) + "\\" +
             Path.GetFileNameWithoutExtension(path) + ".xml", xmlWriterSettings);
 
             writer.WriteStartDocument();
             writer.WriteStartElement("FTE");
 
             writer.WriteStartElement("Textures");
-            foreach(Structs.Texture texture in textures) {
+            foreach (Texture texture in textures)
+            {
                 writer.WriteStartElement("Texture");
                 writer.WriteAttributeString("Name", texture.textureName);
                 writer.WriteAttributeString("Size_X", texture.textureSizeX.ToString());
@@ -100,7 +110,8 @@ namespace SonicUnleashedFCOConv {
             writer.WriteComment("ConverseID = Hex, Points = Px, Point1 = TopLeft, Point2 = BottomRight");
 
             writer.WriteStartElement("Characters");
-            foreach(Structs.Character character in characters) {
+            foreach (Character character in characters)
+            {
                 writer.WriteStartElement("Character");
                 writer.WriteAttributeString("TextureIndex", character.textureIndex.ToString());
                 writer.WriteAttributeString("ConverseID", character.convID);
@@ -113,7 +124,7 @@ namespace SonicUnleashedFCOConv {
             writer.WriteEndElement();
 
             writer.WriteEndDocument();
-	        writer.Close();
+            writer.Close();
 
             textures.Clear();
             characters.Clear();

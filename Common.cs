@@ -1,50 +1,63 @@
+using SUFcoTool;
 using System.Text;
 using System.Xml;
-using SUFontTool;
 
-namespace SonicUnleashedFCOConv {
-    class Common {
+
+namespace SUFcoTool
+{
+    class Common
+    {
         public static string? fcoTable, fcoTableDir, fcoTableName;
         public static bool noLetter = false;
 
         // Common Functions
-        public static void TempCheck(int mode) {    // This is no longer needed but will be kept for future use            
-            if (mode == 1) {
+        public static void TempCheck(int mode)
+        {    // This is no longer needed but will be kept for future use            
+            if (mode == 1)
+            {
                 FileStream fs;
-                
-                if (File.Exists("temp.txt")) {
+
+                if (File.Exists("temp.txt"))
+                {
                     File.Delete("temp.txt");
                     fs = File.Create("temp.txt");
                     fs.Close();
 
                     Console.WriteLine("Deleted and Restored Temp File.");
                 }
-                else {
+                else
+                {
                     fs = File.Create("temp.txt");
                     Console.WriteLine("Created Temp File.");
                     fs.Close();
                 }
             }
-            if (mode == 2) {
-                if (Common.noLetter) {
+            if (mode == 2)
+            {
+                if (Common.noLetter)
+                {
                     return;
                 }
-                
+
                 File.Delete("temp.txt");
             }
         }
 
-        public static bool ErrorCheck() {
-            if (Translator.missinglist.Count > 0) {
+        public static bool ErrorCheck()
+        {
+            if (Translator.missinglist.Count > 0)
+            {
                 TempCheck(1);
-            
+
                 StreamWriter sw = new StreamWriter("temp.txt", append: true);
-                for (int i = 0; i < Translator.missinglist.Count; i++) {
+                for (int i = 0; i < Translator.missinglist.Count; i++)
+                {
                     sw.WriteLine(Translator.missinglist[i]);
-                }                
+                }
                 sw.Close();
 
-                switch (Path.GetExtension(Program.fileName)) {
+                switch (Path.GetExtension(Program.fileName))
+                {
                     case ".fco":
                         Console.WriteLine("\nMissing Characters between " + Program.fileName + " and " + Common.fcoTableName + " Table");
                         Console.WriteLine("XML writing aborted!");
@@ -70,7 +83,7 @@ namespace SonicUnleashedFCOConv {
                 Console.WriteLine("ERROR: Please check your temp file!");
                 Console.WriteLine("\nPress Enter to Exit.");
                 Console.Read();
-                
+
                 return true;
             }
             else
@@ -79,41 +92,46 @@ namespace SonicUnleashedFCOConv {
             }
         }
 
-        public static void ExtractCheck() {
+        public static void ExtractCheck()
+        {
             Console.WriteLine("Do you want to extract sprites using " + Program.fileName + "? [Y/N]");
             string choice = Console.ReadLine();
             if (choice.ToLower() != "y") return;
 
-            DDS.Process();
+            //DDS.Process();
             Table.WriteJSON();
             Console.WriteLine("\nPress Enter to Exit.");
             Console.Read();
         }
 
-        static void IndexCheck(string userInput, int length) {
+        static void IndexCheck(string userInput, int length)
+        {
             int userInt = Convert.ToInt32(userInput);
-            if (userInt < 1 || userInt > length) {
+            if (userInt < 1 || userInt > length)
+            {
                 Console.WriteLine("\nThis is not a valid selection!\nPress any key to exit.");
                 Console.Read();
                 Environment.Exit(0);
                 return;
             }
         }
-        
-        
+
+
         // FCO and FTE Functions
-        public static void TableAssignment() {      // This block of code is probably the worst thing I have ever made :)
+        public static void TableAssignment()
+        {      // This block of code is probably the worst thing I have ever made :)
             fcoTableDir = Program.currentDir + "/tables/";
             Console.WriteLine("Please Input the number corresponding to the original location of your FCO file:");
             Console.WriteLine("\n1: Languages\n2: Subtitle");
 
-            string[] location = {"Languages/", "Subtitle/"};
-            string[] language = {"English/", "French/", "German/", "Italian/", "Japanese/", "Spanish/"};
-            string[] version = {"Retail/", "DLC/", "Preview/"};
+            string[] location = { "Languages/", "Subtitle/" };
+            string[] language = { "English/", "French/", "German/", "Italian/", "Japanese/", "Spanish/" };
+            string[] version = { "Retail/", "DLC/", "Preview/" };
 
             string? userInput = Console.ReadLine();
 
-            switch (userInput.ToLower()) {
+            switch (userInput.ToLower())
+            {
                 case "1":
                     IndexCheck(userInput, location.Length);
                     fcoTableName += location[Convert.ToInt32(userInput) - 1];
@@ -168,57 +186,66 @@ namespace SonicUnleashedFCOConv {
             Console.WriteLine(fcoTable + "\n" + Translator.iconsTablePath);
         }
 
-        public static int EndianSwap(int a) {
+        public static int EndianSwap(int a)
+        {
             byte[] x = BitConverter.GetBytes(a);
             Array.Reverse(x);
             int b = BitConverter.ToInt32(x, 0);
             return b;
         }
 
-        public static float EndianSwapFloat(float a) {
+        public static float EndianSwapFloat(float a)
+        {
             byte[] x = BitConverter.GetBytes(a);
             Array.Reverse(x);
             float b = BitConverter.ToSingle(x, 0);
             return b;
         }
 
-        public static void SkipPadding(BinaryReader binaryReader) {
-            while (binaryReader.BaseStream.Position < binaryReader.BaseStream.Length) {
+        public static void SkipPadding(BinaryReader binaryReader)
+        {
+            while (binaryReader.BaseStream.Position < binaryReader.BaseStream.Length)
+            {
                 int padding = Common.EndianSwap(binaryReader.ReadByte());
 
-                if (padding == 64) {
+                if (padding == 64)
+                {
                     binaryReader.BaseStream.Seek(1, SeekOrigin.Current);
                 }
-                else if (padding < 64) {
+                else if (padding < 64)
+                {
                     binaryReader.BaseStream.Seek(-1, SeekOrigin.Current);
                     break;
                 }
             }
         }
 
-        public static void ReadFCOColour(BinaryReader binaryReader, ref Structs.Colour colourType) {
-            colourType.colourStart = EndianSwap(binaryReader.ReadInt32());
-            colourType.colourEnd = EndianSwap(binaryReader.ReadInt32());
-            colourType.colourMarker = EndianSwap(binaryReader.ReadInt32());
-            colourType.colourAlpha = binaryReader.ReadByte();
-            colourType.colourRed = binaryReader.ReadByte();
-            colourType.colourGreen = binaryReader.ReadByte();
-            colourType.colourBlue = binaryReader.ReadByte();
+        public static void ReadFCOColor(BinaryReader binaryReader, ref Color ColorType)
+        {
+            ColorType.ColorStart = EndianSwap(binaryReader.ReadInt32());
+            ColorType.ColorEnd = EndianSwap(binaryReader.ReadInt32());
+            ColorType.ColorMarker = EndianSwap(binaryReader.ReadInt32());
+            ColorType.ColorAlpha = binaryReader.ReadByte();
+            ColorType.ColorRed = binaryReader.ReadByte();
+            ColorType.ColorGreen = binaryReader.ReadByte();
+            ColorType.ColorBlue = binaryReader.ReadByte();
         }
 
-        public static void WriteFCOColour(XmlWriter writer, Structs.Colour colourType) {
-            writer.WriteAttributeString("Start", colourType.colourStart.ToString());
-            writer.WriteAttributeString("End", colourType.colourEnd.ToString());
-            writer.WriteAttributeString("Marker", colourType.colourMarker.ToString());
+        public static void WriteFCOColor(XmlWriter writer, Color ColorType)
+        {
+            writer.WriteAttributeString("Start", ColorType.ColorStart.ToString());
+            writer.WriteAttributeString("End", ColorType.ColorEnd.ToString());
+            writer.WriteAttributeString("Marker", ColorType.ColorMarker.ToString());
 
-            writer.WriteAttributeString("Alpha", colourType.colourAlpha.ToString());
-            writer.WriteAttributeString("Red", colourType.colourRed.ToString());
-            writer.WriteAttributeString("Green", colourType.colourGreen.ToString());
-            writer.WriteAttributeString("Blue", colourType.colourBlue.ToString());
+            writer.WriteAttributeString("Alpha", ColorType.ColorAlpha.ToString());
+            writer.WriteAttributeString("Red", ColorType.ColorRed.ToString());
+            writer.WriteAttributeString("Green", ColorType.ColorGreen.ToString());
+            writer.WriteAttributeString("Blue", ColorType.ColorBlue.ToString());
         }
 
         // XML Functions
-        public static byte[] StringToByteArray(string hex) {
+        public static byte[] StringToByteArray(string hex)
+        {
             int numberChars = hex.Length;
             byte[] bytes = new byte[numberChars / 2];
             for (int i = 0; i < numberChars; i += 2)
@@ -228,34 +255,38 @@ namespace SonicUnleashedFCOConv {
             return bytes;
         }
 
-        public static void ReadXMLColour(ref Structs.Colour colourType, XmlElement? colourNode)  {
-            try {
-                colourType.colourStart = int.Parse(colourNode.Attributes.GetNamedItem("Start")!.Value!);
-                colourType.colourEnd = int.Parse(colourNode.Attributes.GetNamedItem("End")!.Value!);
-                colourType.colourMarker = int.Parse(colourNode.Attributes.GetNamedItem("Marker")!.Value!);
-                colourType.colourAlpha = byte.Parse(colourNode.Attributes.GetNamedItem("Alpha")!.Value!);
-                colourType.colourRed = byte.Parse(colourNode.Attributes.GetNamedItem("Red")!.Value!);
-                colourType.colourGreen = byte.Parse(colourNode.Attributes.GetNamedItem("Green")!.Value!);
-                colourType.colourBlue = byte.Parse(colourNode.Attributes.GetNamedItem("Blue")!.Value!);
+        public static void ReadXMLColor(ref Color ColorType, XmlElement? ColorNode)
+        {
+            try
+            {
+                ColorType.ColorStart = int.Parse(ColorNode.Attributes.GetNamedItem("Start")!.Value!);
+                ColorType.ColorEnd = int.Parse(ColorNode.Attributes.GetNamedItem("End")!.Value!);
+                ColorType.ColorMarker = int.Parse(ColorNode.Attributes.GetNamedItem("Marker")!.Value!);
+                ColorType.ColorAlpha = byte.Parse(ColorNode.Attributes.GetNamedItem("Alpha")!.Value!);
+                ColorType.ColorRed = byte.Parse(ColorNode.Attributes.GetNamedItem("Red")!.Value!);
+                ColorType.ColorGreen = byte.Parse(ColorNode.Attributes.GetNamedItem("Green")!.Value!);
+                ColorType.ColorBlue = byte.Parse(ColorNode.Attributes.GetNamedItem("Blue")!.Value!);
             }
-            catch (FormatException e) {
+            catch (FormatException e)
+            {
                 //Console.WriteLine(e);
-                var groupName = colourNode.ParentNode.ParentNode.Attributes.GetNamedItem("Name")!.Value!;
-                var cellName = colourNode.ParentNode.Attributes.GetNamedItem("Name")!.Value!;
-                Console.WriteLine("ERROR: Check your Colour Values in Group: " + groupName + ", Cell: " + cellName );
+                var groupName = ColorNode.ParentNode.ParentNode.Attributes.GetNamedItem("Name")!.Value!;
+                var cellName = ColorNode.ParentNode.Attributes.GetNamedItem("Name")!.Value!;
+                Console.WriteLine("ERROR: Check your Color Values in Group: " + groupName + ", Cell: " + cellName);
                 Console.ReadKey();
                 throw;
             }
         }
-        
-        public static void WriteXMLColour(BinaryWriter binaryWriter, Structs.Colour colourType) {
-            binaryWriter.Write(Common.EndianSwap(colourType.colourStart));
-            binaryWriter.Write(Common.EndianSwap(colourType.colourEnd));
-            binaryWriter.Write(Common.EndianSwap(colourType.colourMarker));
-            binaryWriter.Write(colourType.colourAlpha);
-            binaryWriter.Write(colourType.colourRed);
-            binaryWriter.Write(colourType.colourGreen);
-            binaryWriter.Write(colourType.colourBlue);
+
+        public static void WriteXMLColor(BinaryWriter binaryWriter, Color ColorType)
+        {
+            binaryWriter.Write(Common.EndianSwap(ColorType.ColorStart));
+            binaryWriter.Write(Common.EndianSwap(ColorType.ColorEnd));
+            binaryWriter.Write(Common.EndianSwap(ColorType.ColorMarker));
+            binaryWriter.Write(ColorType.ColorAlpha);
+            binaryWriter.Write(ColorType.ColorRed);
+            binaryWriter.Write(ColorType.ColorGreen);
+            binaryWriter.Write(ColorType.ColorBlue);
         }
 
         public static string PadString(string input, char fillerChar)
@@ -264,7 +295,8 @@ namespace SonicUnleashedFCOConv {
             return input.PadRight(input.Length + padding, fillerChar);
         }
 
-        public static void ConvString(BinaryWriter writer, string value)  {
+        public static void ConvString(BinaryWriter writer, string value)
+        {
             // Turning string into Byte Array so the data can be written properly
             byte[] utf8Bytes = Encoding.UTF8.GetBytes(value);
             writer.Write(utf8Bytes);
