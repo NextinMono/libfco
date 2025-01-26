@@ -1,3 +1,5 @@
+using SUFontTool.FCO;
+using System.Numerics;
 using System.Xml;
 
 
@@ -39,7 +41,7 @@ namespace SUFcoTool
             if (xRoot is { Name: "FCO" })
             {
                 tableNoName = Program.currentDir + "/tables/" + (xRoot.Attributes.GetNamedItem("Table")!.Value!);
-                Common.fcoTable = tableNoName + ".json";
+                var table = TranslationTable.Read(tableNoName + ".json");
                 Translator.iconsTablePath = "tables/Icons.json";
 
                 foreach (XmlElement node in xRoot)
@@ -71,7 +73,7 @@ namespace SUFcoTool
                                     if (messageNode.Name == "Message")
                                     {
                                         cell.cellMessage = messageNode.Attributes.GetNamedItem("MessageData")!.Value!;
-                                        string hexString = Translator.TXTtoHEX(cell.cellMessage);
+                                        string hexString = Translator.TXTtoHEX(cell.cellMessage, table);
                                         hexString = hexString.Replace(" ", "");
 
                                         byte[] messageByteArray = Common.StringToByteArray(hexString);
@@ -137,9 +139,8 @@ namespace SUFcoTool
                         {
                             Texture texture = new Texture()
                             {
-                                textureName = textureNode.Attributes.GetNamedItem("Name")!.Value!,
-                                textureSizeX = int.Parse(textureNode.Attributes.GetNamedItem("Size_X")!.Value!),
-                                textureSizeY = int.Parse(textureNode.Attributes.GetNamedItem("Size_Y")!.Value!),
+                                Name = textureNode.Attributes.GetNamedItem("Name")!.Value!,
+                                Size = new Vector2(int.Parse(textureNode.Attributes.GetNamedItem("Size_X")!.Value!), int.Parse(textureNode.Attributes.GetNamedItem("Size_Y")!.Value!))
                             };
 
                             textures.Add(texture);
@@ -153,12 +154,10 @@ namespace SUFcoTool
                         {
                             Character character = new Character()
                             {
-                                textureIndex = int.Parse(charaNode.Attributes.GetNamedItem("TextureIndex")!.Value!),
-                                convID = charaNode.Attributes.GetNamedItem("ConverseID")!.Value!,
-                                charPoint1X = int.Parse(charaNode.Attributes.GetNamedItem("Point1_X")!.Value!),
-                                charPoint1Y = int.Parse(charaNode.Attributes.GetNamedItem("Point1_Y")!.Value!),
-                                charPoint2X = int.Parse(charaNode.Attributes.GetNamedItem("Point2_X")!.Value!),
-                                charPoint2Y = int.Parse(charaNode.Attributes.GetNamedItem("Point2_Y")!.Value!),
+                                TextureIndex = int.Parse(charaNode.Attributes.GetNamedItem("TextureIndex")!.Value!),
+                                FcoCharacterID = charaNode.Attributes.GetNamedItem("ConverseID")!.Value!,
+                                TopLeft = new Vector2(int.Parse(charaNode.Attributes.GetNamedItem("Point1_X")!.Value!), int.Parse(charaNode.Attributes.GetNamedItem("Point1_Y")!.Value!)),
+                                BottomRight = new Vector2(int.Parse(charaNode.Attributes.GetNamedItem("Point2_X")!.Value!), int.Parse(charaNode.Attributes.GetNamedItem("Point2_Y")!.Value!))
                             };
 
                             characters.Add(character);
@@ -172,39 +171,6 @@ namespace SUFcoTool
         }
 
 
-        public static void WriteFTE(string path)
-        {
-            string filePath = Path.GetDirectoryName(path) + "\\" + Path.GetFileNameWithoutExtension(path);
-            File.Delete(Path.Combine(filePath + ".fte"));
-            BinaryWriter binaryWriter = new BinaryWriter(File.Open(filePath + ".fte", FileMode.OpenOrCreate));
-
-            // Writing Header
-            binaryWriter.Write(Common.EndianSwap(0x00000004));
-            binaryWriter.Write(0x00000000);
-
-            // Texture Count
-            binaryWriter.Write(Common.EndianSwap(textures.Count));
-            for (int t = 0; t < textures.Count; t++)
-            {
-                binaryWriter.Write(Common.EndianSwap(textures[t].textureName.Length));
-                Common.ConvString(binaryWriter, Common.PadString(textures[t].textureName, '@'));
-                binaryWriter.Write(Common.EndianSwap(textures[t].textureSizeX));
-                binaryWriter.Write(Common.EndianSwap(textures[t].textureSizeY));
-            }
-
-            binaryWriter.Write(Common.EndianSwap(characters.Count));
-            for (int c = 0; c < characters.Count; c++)
-            {
-                var textureData = textures[characters[c].textureIndex];
-                binaryWriter.Write(Common.EndianSwap(characters[c].textureIndex));
-                binaryWriter.Write(Common.EndianSwapFloat(characters[c].charPoint1X / textureData.textureSizeX));
-                binaryWriter.Write(Common.EndianSwapFloat(characters[c].charPoint1Y / textureData.textureSizeY));
-                binaryWriter.Write(Common.EndianSwapFloat(characters[c].charPoint2X / textureData.textureSizeX));
-                binaryWriter.Write(Common.EndianSwapFloat(characters[c].charPoint2Y / textureData.textureSizeY));
-            }
-
-            binaryWriter.Close();
-            Console.WriteLine("FTE written!");
-        }
+        
     }
 }

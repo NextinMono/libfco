@@ -24,13 +24,13 @@ namespace SUFcoTool
 
             foreach (Character character in characters)
             {
-                Console.WriteLine(character.convID + ": ");
+                Console.WriteLine(character.FcoCharacterID + ": ");
                 userInput = Console.ReadLine();
                 if (userInput == null)
                 {
                     userInput = "{FILL}";
                 }
-                conversionTable.Add(new ConversionEntry { letter = userInput, hexString = character.convID });
+                conversionTable.Add(new ConversionEntry { letter = userInput, hexString = character.FcoCharacterID });
             }
 
             // Convert the list to JSON and write to a file

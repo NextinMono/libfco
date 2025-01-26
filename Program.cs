@@ -36,8 +36,8 @@
                 {
                     if (file.EndsWith(".fte"))
                     {
-                        FTE.ReadFTE(args[0]);
-                        FTE.WriteXML(args[0]);
+                        //FTE.ReadFTE(args[0]);
+                        //FTE.WriteXML(args[0]);
                     }
                     if (file.EndsWith(".fco"))
                     {
@@ -54,7 +54,7 @@
                         }
                         else
                         {
-                            if (Common.ErrorCheck() == false) XML.WriteFTE(args[0]);
+                            //XML.WriteFTE(args[0]);
                             Common.ExtractCheck();
                         }
 

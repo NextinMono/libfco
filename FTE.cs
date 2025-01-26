@@ -1,20 +1,21 @@
 using System.Xml;
 using System.Text;
+using System.Numerics;
 
 
 namespace SUFcoTool
 {
-    public static class FTE
+    public class FTE
     {
-        public static List<Texture> textures = new List<Texture>();
-        public static List<Character> characters = new List<Character>();
+        public List<Texture> Textures = new List<Texture>();
+        public List<Character> Characters = new List<Character>();
 
-        public static void ReadFTE(string path)
+        public static FTE Read(string in_Path)
         {
-            FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read);
+            FileStream fileStream = new FileStream(in_Path, FileMode.Open, FileAccess.Read);
             BinaryReader binaryReader = new BinaryReader(fileStream);
             Encoding UTF8Encoding = Encoding.GetEncoding("UTF-8");
-
+            FTE fTE = new FTE();
             try
             {
                 // Start Parse
@@ -28,13 +29,12 @@ namespace SUFcoTool
                     Texture textureData = new Texture();
 
                     // Texture Name
-                    textureData.textureName = UTF8Encoding.GetString(binaryReader.ReadBytes(Common.EndianSwap(binaryReader.ReadInt32())));
+                    textureData.Name = UTF8Encoding.GetString(binaryReader.ReadBytes(Common.EndianSwap(binaryReader.ReadInt32())));
                     Common.SkipPadding(binaryReader);
 
-                    textureData.textureSizeX = Common.EndianSwap(binaryReader.ReadInt32());
-                    textureData.textureSizeY = Common.EndianSwap(binaryReader.ReadInt32());
+                    textureData.Size = new Vector2(Common.EndianSwap(binaryReader.ReadInt32()), Common.EndianSwap(binaryReader.ReadInt32()));
 
-                    textures.Add(textureData);
+                    fTE.Textures.Add(textureData);
                 }
 
                 // Characters
@@ -47,25 +47,24 @@ namespace SUFcoTool
                 {
                     Character charaData = new Character();
 
-                    charaData.textureIndex = Common.EndianSwap(binaryReader.ReadInt32());
+                    charaData.TextureIndex = Common.EndianSwap(binaryReader.ReadInt32());
 
-                    if (charaData.textureIndex == 2 && IndexChange == false)
+                    if (charaData.TextureIndex == 2 && IndexChange == false)
                     {
                         CurrentID += 100;
                         IndexChange = true;
                     }
 
-                    charaData.convID = CurrentID.ToString("X8").Insert(2, " ").Insert(5, " ").Insert(8, " ");
+                    charaData.FcoCharacterID = CurrentID.ToString("X8").Insert(2, " ").Insert(5, " ").Insert(8, " ");
 
-                    var TexSizeX = textures[charaData.textureIndex].textureSizeX;
-                    var TexSizeY = textures[charaData.textureIndex].textureSizeY;
+                    var TexSizeX = fTE.Textures[charaData.TextureIndex].Size.X;
+                    var TexSizeY = fTE.Textures[charaData.TextureIndex].Size.Y;
 
-                    charaData.charPoint1X = TexSizeX * Common.EndianSwapFloat(binaryReader.ReadSingle());
-                    charaData.charPoint1Y = TexSizeY * Common.EndianSwapFloat(binaryReader.ReadSingle());
-                    charaData.charPoint2X = TexSizeX * Common.EndianSwapFloat(binaryReader.ReadSingle());
-                    charaData.charPoint2Y = TexSizeY * Common.EndianSwapFloat(binaryReader.ReadSingle());
+                    charaData.TopLeft = new Vector2(TexSizeX * Common.EndianSwapFloat(binaryReader.ReadSingle()), TexSizeY * Common.EndianSwapFloat(binaryReader.ReadSingle()));
+                    charaData.BottomRight = new Vector2(TexSizeX * Common.EndianSwapFloat(binaryReader.ReadSingle()), TexSizeY * Common.EndianSwapFloat(binaryReader.ReadSingle()));
+                 
 
-                    characters.Add(charaData);
+                    fTE.Characters.Add(charaData);
                     CurrentID++;
                 }
             }
@@ -82,10 +81,43 @@ namespace SUFcoTool
             }
 
             binaryReader.Close();
-            Console.WriteLine("FTE Read!");
+            return fTE;
         }
+        public void WriteFTE(string path)
+        {
+            string filePath = Path.GetDirectoryName(path) + "\\" + Path.GetFileNameWithoutExtension(path);
+            File.Delete(Path.Combine(filePath + ".fte"));
+            BinaryWriter binaryWriter = new BinaryWriter(File.Open(filePath + ".fte", FileMode.OpenOrCreate));
 
-        public static void WriteXML(string path)
+            // Writing Header
+            binaryWriter.Write(Common.EndianSwap(0x00000004));
+            binaryWriter.Write(0x00000000);
+
+            // Texture Count
+            binaryWriter.Write(Common.EndianSwap(Textures.Count));
+            for (int t = 0; t < Textures.Count; t++)
+            {
+                binaryWriter.Write(Common.EndianSwap(Textures[t].Name.Length));
+                Common.ConvString(binaryWriter, Common.PadString(Textures[t].Name, '@'));
+                binaryWriter.Write(Common.EndianSwap((int)Textures[t].Size.X));
+                binaryWriter.Write(Common.EndianSwap((int)Textures[t].Size.Y));
+            }
+
+            binaryWriter.Write(Common.EndianSwap(Characters.Count));
+            for (int c = 0; c < Characters.Count; c++)
+            {
+                var textureData = Textures[Characters[c].TextureIndex];
+                binaryWriter.Write(Common.EndianSwap(Characters[c].TextureIndex));
+                binaryWriter.Write(Common.EndianSwapFloat(Characters[c].TopLeft.X / textureData.Size.X));
+                binaryWriter.Write(Common.EndianSwapFloat(Characters[c].TopLeft.Y / textureData.Size.Y));
+                binaryWriter.Write(Common.EndianSwapFloat(Characters[c].BottomRight.X / textureData.Size.X));
+                binaryWriter.Write(Common.EndianSwapFloat(Characters[c].BottomRight.Y / textureData.Size.Y));
+            }
+
+            binaryWriter.Close();
+            Console.WriteLine("FTE written!");
+        }
+        public void WriteXML(string path)
         {
             File.Delete(Path.Combine(Path.GetFileNameWithoutExtension(path) + ".xml"));
 
@@ -97,12 +129,12 @@ namespace SUFcoTool
             writer.WriteStartElement("FTE");
 
             writer.WriteStartElement("Textures");
-            foreach (Texture texture in textures)
+            foreach (Texture texture in Textures)
             {
                 writer.WriteStartElement("Texture");
-                writer.WriteAttributeString("Name", texture.textureName);
-                writer.WriteAttributeString("Size_X", texture.textureSizeX.ToString());
-                writer.WriteAttributeString("Size_Y", texture.textureSizeY.ToString());
+                writer.WriteAttributeString("Name", texture.Name);
+                writer.WriteAttributeString("Size_X", texture.Size.X.ToString());
+                writer.WriteAttributeString("Size_Y", texture.Size.Y.ToString());
                 writer.WriteEndElement();
             }
             writer.WriteEndElement();
@@ -110,15 +142,15 @@ namespace SUFcoTool
             writer.WriteComment("ConverseID = Hex, Points = Px, Point1 = TopLeft, Point2 = BottomRight");
 
             writer.WriteStartElement("Characters");
-            foreach (Character character in characters)
+            foreach (Character character in Characters)
             {
                 writer.WriteStartElement("Character");
-                writer.WriteAttributeString("TextureIndex", character.textureIndex.ToString());
-                writer.WriteAttributeString("ConverseID", character.convID);
-                writer.WriteAttributeString("Point1_X", character.charPoint1X.ToString());
-                writer.WriteAttributeString("Point1_Y", character.charPoint1Y.ToString());
-                writer.WriteAttributeString("Point2_X", character.charPoint2X.ToString());
-                writer.WriteAttributeString("Point2_Y", character.charPoint2Y.ToString());
+                writer.WriteAttributeString("TextureIndex", character.TextureIndex.ToString());
+                writer.WriteAttributeString("ConverseID", character.FcoCharacterID);
+                writer.WriteAttributeString("Point1_X", character.TopLeft.X.ToString());
+                writer.WriteAttributeString("Point1_Y", character.TopLeft.Y.ToString());
+                writer.WriteAttributeString("Point2_X", character.BottomRight.X.ToString());
+                writer.WriteAttributeString("Point2_Y", character.BottomRight.Y.ToString());
                 writer.WriteEndElement();
             }
             writer.WriteEndElement();
@@ -126,8 +158,8 @@ namespace SUFcoTool
             writer.WriteEndDocument();
             writer.Close();
 
-            textures.Clear();
-            characters.Clear();
+            Textures.Clear();
+            Characters.Clear();
 
             Console.WriteLine("XML written!");
         }

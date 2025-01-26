@@ -1,35 +1,26 @@
 using System.Xml;
 using System.Text;
 using SUFcoTool;
+using SUFontTool.FCO;
 
 
 namespace SUFcoTool
 {
     public class FCO
     {        
-        
         public List<Group> Groups = new List<Group>();
-        public static FCO Read(string in_Path)
+        public TranslationTable TranslationTable;
+        public static FCO Read(string in_Path, string in_PathTable = "")
         {
             // Very messy 2nd arg thing, I'll clean this up
-            if (Program.tableArg != null)
-            {
-                Common.fcoTableDir = Program.currentDir + "/tables/";
-                Common.fcoTableName = Program.tableArg;
-                Common.fcoTable = Common.fcoTableDir + Common.fcoTableName + ".json";
-                Translator.iconsTablePath = Common.fcoTableDir + "Icons.json";
-            }
-            else
-            {
-                Common.TableAssignment();
-            }
-            if (Common.fcoTable == null) return null;
+           
             //Common.fcoTable
             FileStream fileStream = new FileStream(in_Path, FileMode.Open, FileAccess.Read);
             BinaryReader binaryReader = new BinaryReader(fileStream);
             Encoding UTF8Encoding = Encoding.GetEncoding("UTF-8");      // Names of Groups and Cells are in UTF-8
 
             FCO fCO = new FCO();
+            fCO.TranslationTable = TranslationTable.Read(in_PathTable);
             try
             {
                 // Start Parse
@@ -61,7 +52,7 @@ namespace SUFcoTool
 
                         int messageLength = Common.EndianSwap(binaryReader.ReadInt32());
                         byte[] cellMessageBytes = binaryReader.ReadBytes(messageLength * 4);
-                        cellData.cellMessage = Translator.HEXtoTXT(BitConverter.ToString(cellMessageBytes).Replace("-", " "));
+                        cellData.cellMessage = Translator.HEXtoTXT(BitConverter.ToString(cellMessageBytes).Replace("-", " "), fCO.TranslationTable);
 
                         binaryReader.ReadInt32();   // This is 0x04 before Colors
 
@@ -133,7 +124,7 @@ namespace SUFcoTool
 
             writer.WriteStartDocument();
             writer.WriteStartElement("FCO");
-            writer.WriteAttributeString("Table", Common.fcoTableName);      // This is used later once the XML is used to convert the data back into an FCO format
+            writer.WriteAttributeString("Table", TranslationTable.Name);      // This is used later once the XML is used to convert the data back into an FCO format
 
             writer.WriteStartElement("Groups");
             foreach (Group group in Groups)

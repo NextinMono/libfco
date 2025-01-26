@@ -7,7 +7,6 @@ namespace SUFcoTool
 {
     class Common
     {
-        public static string? fcoTable, fcoTableDir, fcoTableName;
         public static bool noLetter = false;
 
         // Common Functions
@@ -43,54 +42,6 @@ namespace SUFcoTool
             }
         }
 
-        public static bool ErrorCheck()
-        {
-            if (Translator.missinglist.Count > 0)
-            {
-                TempCheck(1);
-
-                StreamWriter sw = new StreamWriter("temp.txt", append: true);
-                for (int i = 0; i < Translator.missinglist.Count; i++)
-                {
-                    sw.WriteLine(Translator.missinglist[i]);
-                }
-                sw.Close();
-
-                switch (Path.GetExtension(Program.fileName))
-                {
-                    case ".fco":
-                        Console.WriteLine("\nMissing Characters between " + Program.fileName + " and " + Common.fcoTableName + " Table");
-                        Console.WriteLine("XML writing aborted!");
-                        break;
-                    case ".xml":
-                        Console.WriteLine("\nMissing Characters between " + Program.fileName + " and " + Common.fcoTable);
-                        Console.WriteLine("FCO writing aborted!");
-                        break;
-                    default:
-                        Console.WriteLine("What did you do to me..");
-                        break;
-                }
-
-                /*if (Path.GetExtension(Program.fileName) == ".fco") {
-                    Console.WriteLine("\nMissing Characters between " + Program.fileName + " and " + Common.fcoTableName + " Table");
-                    Console.WriteLine("XML writing aborted!");
-                }
-                if (Path.GetExtension(Program.fileName) == ".xml") {
-                    Console.WriteLine("\nMissing Characters between " + Program.fileName + " and " + Common.fcoTable);
-                    Console.WriteLine("FCO writing aborted!");
-                }*/
-
-                Console.WriteLine("ERROR: Please check your temp file!");
-                Console.WriteLine("\nPress Enter to Exit.");
-                Console.Read();
-
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
 
         public static void ExtractCheck()
         {
@@ -120,10 +71,11 @@ namespace SUFcoTool
         // FCO and FTE Functions
         public static void TableAssignment()
         {      // This block of code is probably the worst thing I have ever made :)
-            fcoTableDir = Program.currentDir + "/tables/";
+            string fcoTableDir = Program.currentDir + "/tables/";
             Console.WriteLine("Please Input the number corresponding to the original location of your FCO file:");
             Console.WriteLine("\n1: Languages\n2: Subtitle");
 
+            string fcoTableName = "";
             string[] location = { "Languages/", "Subtitle/" };
             string[] language = { "English/", "French/", "German/", "Italian/", "Japanese/", "Spanish/" };
             string[] version = { "Retail/", "DLC/", "Preview/" };
@@ -182,8 +134,8 @@ namespace SUFcoTool
             Console.WriteLine("\nWhat is the name of the archive the FCO originated from?");
             fcoTableName += userInput = Console.ReadLine();
 
-            fcoTable = fcoTableDir + fcoTableName + ".json";
-            Console.WriteLine(fcoTable + "\n" + Translator.iconsTablePath);
+            //fcoTable = fcoTableDir + fcoTableName + ".json";
+            //Console.WriteLine(fcoTable + "\n" + Translator.iconsTablePath);
         }
 
         public static int EndianSwap(int a)

@@ -1,3 +1,4 @@
+using SUFontTool.FCO;
 using System.Text;
 using System.Text.Json;
 
@@ -11,19 +12,11 @@ namespace SUFcoTool
         public static string? iconsTablePath, tempTablePath;
         public static List<string> missinglist = new List<string>();
         public static string[] extraFontFilenames = { "_Small.json", "_Large.json", "_Extra.json" };
+        public static TranslationTable? IconsTable { get; set; }
         public enum FontSizes { S = 0, L = 1, X = 2 }
 
         public static string Missing = "?MISSING?";
 
-        public static string stringConv(string tagstr, string fontsize)
-        {
-            tempTablePath = Common.fcoTable;
-            Common.fcoTable = XML.tableNoName + fontsize;
-            string hexString = Translator.TXTtoHEX(tagstr);
-            Common.fcoTable = tempTablePath;
-
-            return hexString;
-        }
 
         public static void fontmerge(List<string> chunks)
         {
@@ -89,30 +82,10 @@ namespace SUFcoTool
         public static string SearchIconsTable(string in_String, bool in_ToText)
         {
             //If its still missing, try checking the icons table
-            using JsonDocument docIcon = JsonDocument.Parse(File.ReadAllText(iconsTablePath));
-            return SearchHexStringForLetter(docIcon.RootElement, in_String, in_ToText);
-        }
-        public static string SearchExtraTables(string hexString)
-        {
-            string searchResult = Missing;
-            //Check if the value could be in the extra town tables (Small, Large, Extra)
-            for (int i = 0; i < 3; i++)
-            {
-                if (File.Exists(Common.fcoTableDir + Common.fcoTableName + extraFontFilenames[i]))
-                {
-                    using JsonDocument docExtraTable = JsonDocument.Parse(File.ReadAllText(Common.fcoTableDir + Common.fcoTableName + extraFontFilenames[i]));
-                    searchResult = SearchHexStringForLetter(docExtraTable.RootElement, hexString, true);
-                    if (searchResult != Missing)
-                    {
-                        tableIndex = i;
-                        return searchResult;
-                    }
-                }
-            }
-            searchResult = SearchIconsTable(hexString, true);
-
-            return searchResult;
-        }
+            if(IconsTable == null)
+                IconsTable = TranslationTable.Read(iconsTablePath);
+            return SearchHexStringForLetter(IconsTable, in_String, in_ToText);
+        }        
 
         private static bool EndsWithSaurus(String s)
         {
@@ -129,20 +102,20 @@ namespace SUFcoTool
             return MessageCharAmount;
         }
 
-        public static string HEXtoTXT(string hex)
+        public static string HEXtoTXT(string hex, TranslationTable in_Table)
         {
-            List<string> chunks = SplitStringIntoChunks(true, hex, 11);
+            List<string> chunks = SplitStringIntoChunks(true, hex, 11, in_Table);
             fontmerge(chunks);
             return JoinChunks(chunks);
         }
 
-        public static string TXTtoHEX(string hex)
+        public static string TXTtoHEX(string hex, TranslationTable in_Table)
         {
-            List<string> chunks = SplitStringIntoChunks(false, hex, 1);
+            List<string> chunks = SplitStringIntoChunks(false, hex, 1, in_Table);
             return JoinChunks(chunks);
         }
 
-        static List<string> SplitStringIntoChunks(bool mode, string str, int chunkSize)
+        static List<string> SplitStringIntoChunks(bool mode, string str, int chunkSize, TranslationTable in_Table)
         {
             List<string> chunks = new List<string>();
 
@@ -155,11 +128,11 @@ namespace SUFcoTool
                 {
                     if (i + chunkSize > str.Length)
                     {
-                        chunks.Add(GetStringFromTable(str.Substring(i), mode));
+                        chunks.Add(GetStringFromTable(str.Substring(i), mode, in_Table));
                     }
                     else
                     {
-                        chunks.Add(GetStringFromTable(str.Substring(i, chunkSize), mode));
+                        chunks.Add(GetStringFromTable(str.Substring(i, chunkSize), mode, in_Table));
                     }
                 }
             }
@@ -181,13 +154,13 @@ namespace SUFcoTool
                             switch (str[i + 1])
                             {
                                 case 'S':
-                                    fontsize = extraFontFilenames[0];
+                                    fontsize = "Small";
                                     break;
                                 case 'L':
-                                    fontsize = extraFontFilenames[1];
+                                    fontsize = "Large";
                                     break;
                                 case 'X':
-                                    fontsize = extraFontFilenames[2];
+                                    fontsize = "Extra";
                                     break;
                                 default:
                                     Console.WriteLine("ERROR");
@@ -199,7 +172,7 @@ namespace SUFcoTool
                             Console.WriteLine(str[i + 1]);
                             string tagstr = str.Substring(i + 3, endIndex - (i + 3));
                             Console.WriteLine(tagstr);
-                            taghexString = stringConv(tagstr, fontsize);
+                            taghexString = Translator.TXTtoHEX(tagstr, in_Table);
 
                             int MessageCharAmount = taghexString.Length / 11;
                             int indstart = 0;
@@ -218,7 +191,7 @@ namespace SUFcoTool
                         //Standard Exit
                         if (endIndex != -1)
                         {
-                            chunks.Add(GetStringFromTable(str.Substring(i, specialChunkLength), mode));
+                            chunks.Add(GetStringFromTable(str.Substring(i, specialChunkLength), mode, in_Table));
                             i += specialChunkLength; // Move the index past this special chunk
                             continue;
                         }
@@ -241,7 +214,7 @@ namespace SUFcoTool
                         }
 
                         string chunk = str.Substring(i, endIndex - i);
-                        chunks.Add(GetStringFromTable(chunk, mode));
+                        chunks.Add(GetStringFromTable(chunk, mode, in_Table));
                         i = endIndex;
                     }
                 }
@@ -254,27 +227,23 @@ namespace SUFcoTool
         {
             return string.Join("", chunks);
         }
-        static string GetStringFromTable(string hexString, bool inToText)
+        static string GetStringFromTable(string hexString, bool inToText, TranslationTable in_Table)
         {
-            if (!File.Exists(Common.fcoTable))
-            {
-                Console.WriteLine("\nThis table does not exist\nPlease check your files!\nPress any key to exit.");
-                return null;
-            }
-
             //Search for the string in the fco table json
-            using JsonDocument doc = JsonDocument.Parse(File.ReadAllText(Common.fcoTable));
-            string searchResult = SearchHexStringForLetter(doc.RootElement, hexString, inToText);
+            string searchResult = SearchHexStringForLetter(in_Table, hexString, inToText);
 
             //If it couldn't be found, search the extra tables
             if (searchResult == Missing)
             {
                 //Hedgeturd made it so it only checks the icons table if its text to hex, so I did the same
-                searchResult = inToText ? SearchExtraTables(hexString) : SearchIconsTable(hexString, false);
-
+                if (!inToText)
+                {
+                    searchResult = SearchIconsTable(hexString, false);
+                }
+                //If its still missing, give up.
                 if (searchResult == Missing)
                 {
-                    missinglist.Add($"\"{hexString}\" not found in the table \"{Common.fcoTableName}\".");
+                    missinglist.Add($"\"{hexString}\" not found in the table \"{in_Table.Name}\".");
                 }
             }
 
@@ -351,34 +320,34 @@ namespace SUFcoTool
         //    return null;
         //}
 
-        static string SearchHexStringForLetter(JsonElement element, string searchKey, bool inToText)
+        static string SearchHexStringForLetter(TranslationTable element, string searchKey, bool inToText)
         {
-            if (element.ValueKind == JsonValueKind.Array)
+            foreach(var table in element.Tables)
             {
-                foreach (JsonElement item in element.EnumerateArray())
+                foreach (var item in table.Value)
                 {
-                    if (item.TryGetProperty(inToText ? "HexString" : "Letter", out JsonElement keyElement) &&
-                        keyElement.GetString() == searchKey &&
-                        item.TryGetProperty(inToText ? "Letter" : "HexString", out JsonElement resultElement))
+                    if (inToText)
                     {
-                        return resultElement.GetString() ?? Missing;
+                        if (item.HexString == searchKey)
+                        {
+                            return item.Letter;
+                        }
+                    }
+                    else
+                    {
+                        if (item.Letter == searchKey)
+                        {
+                            return item.HexString;
+                        }
                     }
                 }
             }
-            else if (element.ValueKind == JsonValueKind.Object)
-            {
-                foreach (JsonProperty property in element.EnumerateObject())
-                {
-                    if (property.Value.ValueKind == JsonValueKind.Array || property.Value.ValueKind == JsonValueKind.Object)
-                    {
-                        string result = SearchHexStringForLetter(property.Value, searchKey, inToText);
-                        if (result != null) return result;
-                    }
-                }
-            }
-
             return Missing;
         }
 
+        internal static void ReadTables(string in_PathTable)
+        {
+
+        }
     }
 }
