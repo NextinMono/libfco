@@ -19,15 +19,15 @@ namespace SUFcoTool
             switch (in_String.ToLower())
             {
                 case "left":
-                    return Cell.TextAlign.left;
+                    return Cell.TextAlign.Left;
                 case "center":
-                    return Cell.TextAlign.center;
+                    return Cell.TextAlign.Center;
                 case "right":
-                    return Cell.TextAlign.right;
+                    return Cell.TextAlign.Right;
                 case "justified":
-                    return Cell.TextAlign.justified;
+                    return Cell.TextAlign.Justified;
             }
-            return Cell.TextAlign.left;
+            return Cell.TextAlign.Left;
         }
         public static void ReadXML(string path)
         {
@@ -40,9 +40,9 @@ namespace SUFcoTool
 
             if (xRoot is { Name: "FCO" })
             {
-                tableNoName = Program.currentDir + "/tables/" + (xRoot.Attributes.GetNamedItem("Table")!.Value!);
+                tableNoName = Common.ProgramDir + "/tables/" + (xRoot.Attributes.GetNamedItem("Table")!.Value!);
                 var table = TranslationTable.Read(tableNoName + ".json");
-                Translator.iconsTablePath = "tables/Icons.json";
+                TranslationService.iconsTablePath = "tables/Icons.json";
 
                 foreach (XmlElement node in xRoot)
                 {
@@ -51,7 +51,7 @@ namespace SUFcoTool
                         foreach (XmlElement groupNode in node.ChildNodes)
                         {
                             Group group = new Group();
-                            group.groupName = groupNode.Attributes.GetNamedItem("Name")!.Value!;    // Group's Name
+                            group.Name = groupNode.Attributes.GetNamedItem("Name")!.Value!;    // Group's Name
 
                             List<Cell> cells = new List<Cell>();
                             foreach (XmlElement cellNode in groupNode.ChildNodes)
@@ -60,8 +60,8 @@ namespace SUFcoTool
                                 {
                                     Cell cell = new Cell
                                     {
-                                        cellName = cellNode.Attributes.GetNamedItem("Name")!.Value!, // Cell's Name
-                                        alignment = GetAlignFromString(cellNode.Attributes.GetNamedItem("Alignment")!.Value!)
+                                        Name = cellNode.Attributes.GetNamedItem("Name")!.Value!, // Cell's Name
+                                        Alignment = GetAlignFromString(cellNode.Attributes.GetNamedItem("Alignment")!.Value!)
                                     };
 
 
@@ -72,14 +72,14 @@ namespace SUFcoTool
 
                                     if (messageNode.Name == "Message")
                                     {
-                                        cell.cellMessage = messageNode.Attributes.GetNamedItem("MessageData")!.Value!;
-                                        string hexString = Translator.TXTtoHEX(cell.cellMessage, table);
+                                        cell.Message = messageNode.Attributes.GetNamedItem("MessageData")!.Value!;
+                                        string hexString = TranslationService.TXTtoHEX(cell.Message, table);
                                         hexString = hexString.Replace(" ", "");
 
                                         byte[] messageByteArray = Common.StringToByteArray(hexString);
                                         messageByteArray = Common.StringToByteArray(hexString);
-                                        cell.messageCharAmount = hexString.Length / 8;
-                                        cell.cellMessageWrite = messageByteArray;
+                                        cell.MessageLength = hexString.Length / 8;
+                                        cell.MessageRawData = messageByteArray;
                                     }
 
                                     if (ColorNode.Name == "ColorMain")
@@ -112,14 +112,14 @@ namespace SUFcoTool
                                             Color highlight = new Color();
                                             Common.ReadXMLColor(ref highlight, highlightNode);
                                             highlights.Add(highlight);
-                                            cell.highlightList = highlights;
+                                            cell.Highlights = highlights;
                                             workCount++;
                                         }
                                     }
 
                                     cells.Add(cell);
                                 }
-                                group.cellList = cells;
+                                group.CellList = cells;
                             }
                             groups.Add(group);
                         }

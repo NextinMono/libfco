@@ -7,6 +7,11 @@ namespace SUFontTool.FCO
         {
             public string Letter;
             public string HexString;
+            public Entry(string letter, string hexString)
+            {
+                Letter = letter;
+                HexString = hexString;
+            }
         }
         public List<Entry> Standard 
         {
@@ -37,6 +42,11 @@ namespace SUFontTool.FCO
             if (File.Exists(pathLarge)) newTable.Tables.Add("Large",JsonConvert.DeserializeObject<List<Entry>>(File.ReadAllText(pathSmall)));
             if (File.Exists(pathExtra)) newTable.Tables.Add("Extra",JsonConvert.DeserializeObject<List<Entry>>(File.ReadAllText(pathExtra)));
             return newTable;
+        }
+
+        public void Write(string in_Path)
+        {
+            JsonConvert.SerializeObject(Tables["Standard"]);
         }
     }
 }

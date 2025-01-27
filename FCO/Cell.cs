@@ -1,25 +1,23 @@
-﻿
-
-namespace SUFcoTool
+﻿namespace SUFcoTool
 {
-    public struct Cell
+    public class Cell
     {
         public enum TextAlign
         {
-            left = 0,
-            center = 1,
-            right = 2,
-            justified = 3
+            Left = 0,
+            Center = 1,
+            Right = 2,
+            Justified = 3
         }
-        public string cellName { get; set; }
-        public string cellMessage { get; set; }
-        public byte[] cellMessageWrite { get; set; }
-        public int messageCharAmount { get; set; }
+        public string Name { get; set; }
+        public string Message { get; set; }
+        public string MessageConverseIDs { get; set; }
+        public byte[] MessageRawData { get; set; }
+        public int MessageLength { get; set; }
         public Color ColorMain { get; set; }
         public Color ColorSub1 { get; set; }
         public Color ColorSub2 { get; set; }
-        public TextAlign alignment { get; set; }
-        public int highlightCount { get; set; }
-        public List<Color> highlightList { get; set; }
+        public TextAlign Alignment { get; set; }
+        public List<Color> Highlights { get; set; }
     }
 }

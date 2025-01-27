@@ -8,8 +8,38 @@ namespace SUFcoTool
     class Common
     {
         public static bool noLetter = false;
-
+        public static string? ProgramDir
+        {
+            get
+            {
+                return Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            }
+        }
         // Common Functions
+        /// <summary>
+        /// Returns a string where every 4 bytes are separated by a comma (00 00 00 00, 00 00 .. etc.)
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <returns></returns>
+        public static string FormatEvery4Bytes(byte[] bytes)
+        {
+            StringBuilder builder = new StringBuilder();
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                builder.Append(bytes[i].ToString("X2"));
+                if ((i + 1) % 4 != 0 && i != bytes.Length - 1)
+                {
+                    builder.Append(" ");
+                }
+                if ((i + 1) % 4 == 0 && i != bytes.Length - 1)
+                {
+                    builder.Append(", ");
+                }
+            }
+
+            return builder.ToString();
+        }
         public static void TempCheck(int mode)
         {    // This is no longer needed but will be kept for future use            
             if (mode == 1)
@@ -71,7 +101,7 @@ namespace SUFcoTool
         // FCO and FTE Functions
         public static void TableAssignment()
         {      // This block of code is probably the worst thing I have ever made :)
-            string fcoTableDir = Program.currentDir + "/tables/";
+            string fcoTableDir = Common.ProgramDir + "/tables/";
             Console.WriteLine("Please Input the number corresponding to the original location of your FCO file:");
             Console.WriteLine("\n1: Languages\n2: Subtitle");
 
@@ -87,7 +117,7 @@ namespace SUFcoTool
                 case "1":
                     IndexCheck(userInput, location.Length);
                     fcoTableName += location[Convert.ToInt32(userInput) - 1];
-                    Translator.iconsTablePath = fcoTableDir + "Icons.json";
+                    TranslationService.iconsTablePath = fcoTableDir + "Icons.json";
                     break;
                 case "2":
                     IndexCheck(userInput, location.Length);

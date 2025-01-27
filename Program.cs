@@ -2,7 +2,15 @@
 {
     public class Program
     {
-        public static string? fileDir, fileName, currentDir, tableArg;
+        //public static string currentDir
+        //{
+        //    get
+        //    {
+        //        return Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        //    }
+        //}
+
+        public static string? fileDir, fileName, tableArg;
         static void Main(string[] args)
         {
             if (args.Length == 0)
@@ -13,7 +21,6 @@
 
             if (args.Length == 2)
             {
-                currentDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
                 fileDir = Path.GetDirectoryName(args[0]);
                 fileName = Path.GetFileName(args[0]);
                 tableArg = args[1];
@@ -27,7 +34,6 @@
             }
             else
             {
-                currentDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
                 fileDir = Path.GetDirectoryName(args[0]);
                 fileName = Path.GetFileName(args[0]);
                 string file = fileDir + "\\" + fileName;

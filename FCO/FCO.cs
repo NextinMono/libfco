@@ -10,16 +10,22 @@ namespace SUFcoTool
     {        
         public List<Group> Groups = new List<Group>();
         public TranslationTable TranslationTable;
+
+        /// <summary>
+        /// Reads a .fco file and returns a struct.
+        /// </summary>
+        /// <param name="in_Path">Path to the .fco file</param>
+        /// <param name="in_PathTable">Path to the translation table, this can be left as blank to get the raw fco data.</param>
+        /// <returns></returns>
         public static FCO Read(string in_Path, string in_PathTable = "")
-        {
-            // Very messy 2nd arg thing, I'll clean this up
-           
+        {           
             //Common.fcoTable
             FileStream fileStream = new FileStream(in_Path, FileMode.Open, FileAccess.Read);
             BinaryReader binaryReader = new BinaryReader(fileStream);
             Encoding UTF8Encoding = Encoding.GetEncoding("UTF-8");      // Names of Groups and Cells are in UTF-8
 
             FCO fCO = new FCO();
+            if(!string.IsNullOrEmpty(in_PathTable))
             fCO.TranslationTable = TranslationTable.Read(in_PathTable);
             try
             {
@@ -34,7 +40,7 @@ namespace SUFcoTool
                     Group groupData = new Group();
 
                     // Group Name
-                    groupData.groupName = UTF8Encoding.GetString(binaryReader.ReadBytes(Common.EndianSwap(binaryReader.ReadInt32())));
+                    groupData.Name = UTF8Encoding.GetString(binaryReader.ReadBytes(Common.EndianSwap(binaryReader.ReadInt32())));
                     Common.SkipPadding(binaryReader);
 
                     // Cells count
@@ -47,13 +53,14 @@ namespace SUFcoTool
                         Cell cellData = new Cell();
 
                         // Cell's name
-                        cellData.cellName = UTF8Encoding.GetString(binaryReader.ReadBytes(Common.EndianSwap(binaryReader.ReadInt32())));
+                        cellData.Name = UTF8Encoding.GetString(binaryReader.ReadBytes(Common.EndianSwap(binaryReader.ReadInt32())));
                         Common.SkipPadding(binaryReader);
 
                         int messageLength = Common.EndianSwap(binaryReader.ReadInt32());
                         byte[] cellMessageBytes = binaryReader.ReadBytes(messageLength * 4);
-                        cellData.cellMessage = Translator.HEXtoTXT(BitConverter.ToString(cellMessageBytes).Replace("-", " "), fCO.TranslationTable);
-
+                        string rawMessageData = BitConverter.ToString(cellMessageBytes).Replace('-', ' ');
+                        cellData.Message = TranslationService.HEXtoTXT(rawMessageData, fCO.TranslationTable);
+                        cellData.MessageConverseIDs = Common.FormatEvery4Bytes(cellMessageBytes);
                         binaryReader.ReadInt32();   // This is 0x04 before Colors
 
                         // Main Text Color
@@ -79,19 +86,19 @@ namespace SUFcoTool
                         int alignment = Common.EndianSwap(binaryReader.ReadInt32());
                         if (alignment > 3) alignment = 0;
                         var enumDisplayStatus = (Cell.TextAlign)alignment;
-                        cellData.alignment = enumDisplayStatus;
+                        cellData.Alignment = enumDisplayStatus;
 
                         // Highlights
-                        cellData.highlightCount = Common.EndianSwap(binaryReader.ReadInt32());  // If this is anything but 0, it's the highlight count in the cell
+                        var highlightCount = Common.EndianSwap(binaryReader.ReadInt32());  // If this is anything but 0, it's the highlight count in the cell
 
                         List<Color> Highlights = new List<Color>();
-                        for (int h = 0; h < cellData.highlightCount; h++)
+                        for (int h = 0; h < highlightCount; h++)
                         {
                             Color hightlightData = new Color();
                             Common.ReadFCOColor(binaryReader, ref hightlightData);
                             Highlights.Add(hightlightData);
                         }
-                        cellData.highlightList = Highlights;
+                        cellData.Highlights = Highlights;
 
                         // End of Cell
                         binaryReader.ReadInt32();   // Yet to find out what this really does mean..
@@ -100,7 +107,7 @@ namespace SUFcoTool
                             Cell Name, Message, Color0, Color1, Color2 and (possibly) Highlights */
                     }
 
-                    groupData.cellList = Cells;     // This will put every Cell into a Group
+                    groupData.CellList = Cells;     // This will put every Cell into a Group
                     fCO.Groups.Add(groupData);          // This adds all the Groups together
                 }
             }
@@ -130,16 +137,16 @@ namespace SUFcoTool
             foreach (Group group in Groups)
             {
                 writer.WriteStartElement("Group");
-                writer.WriteAttributeString("Name", group.groupName);
+                writer.WriteAttributeString("Name", group.Name);
 
-                foreach (Cell cell in group.cellList)
+                foreach (Cell cell in group.CellList)
                 {
                     writer.WriteStartElement("Cell");
-                    writer.WriteAttributeString("Name", cell.cellName);                     // These parameters are part of the "Cell" Element Header
-                    writer.WriteAttributeString("Alignment", cell.alignment.ToString());
+                    writer.WriteAttributeString("Name", cell.Name);                     // These parameters are part of the "Cell" Element Header
+                    writer.WriteAttributeString("Alignment", cell.Alignment.ToString());
                     // The following Elements are all within the "Cell" Element
                     writer.WriteStartElement("Message");
-                    writer.WriteAttributeString("MessageData", cell.cellMessage);
+                    writer.WriteAttributeString("MessageData", cell.Message);
                     writer.WriteEndElement();
 
                     writer.WriteStartElement("ColorMain");
@@ -154,9 +161,9 @@ namespace SUFcoTool
                     Common.WriteFCOColor(writer, cell.ColorSub2);
                     writer.WriteEndElement();
 
-                    foreach (Color highlight in cell.highlightList)
+                    foreach (Color highlight in cell.Highlights)
                     {
-                        writer.WriteStartElement("Highlight" + cell.highlightList.IndexOf(highlight));
+                        writer.WriteStartElement("Highlight" + cell.Highlights.IndexOf(highlight));
                         Common.WriteFCOColor(writer, highlight);
                         writer.WriteEndElement();
                     }
@@ -186,21 +193,21 @@ namespace SUFcoTool
             for (int g = 0; g < Groups.Count; g++)
             {
                 // Group Name
-                binaryWriter.Write(Common.EndianSwap(Groups[g].groupName.Length));
-                Common.ConvString(binaryWriter, Common.PadString(Groups[g].groupName, '@'));
+                binaryWriter.Write(Common.EndianSwap(Groups[g].Name.Length));
+                Common.ConvString(binaryWriter, Common.PadString(Groups[g].Name, '@'));
 
                 // Cell Count
-                binaryWriter.Write(Common.EndianSwap(Groups[g].cellList.Count));
-                for (int c = 0; c < Groups[g].cellList.Count; c++)
+                binaryWriter.Write(Common.EndianSwap(Groups[g].CellList.Count));
+                for (int c = 0; c < Groups[g].CellList.Count; c++)
                 {
-                    var standardArea = Groups[g].cellList[c];
+                    var standardArea = Groups[g].CellList[c];
                     // Cell Name
-                    binaryWriter.Write(Common.EndianSwap(standardArea.cellName.Length));
-                    Common.ConvString(binaryWriter, Common.PadString(standardArea.cellName, '@'));
+                    binaryWriter.Write(Common.EndianSwap(standardArea.Name.Length));
+                    Common.ConvString(binaryWriter, Common.PadString(standardArea.Name, '@'));
 
                     //Message Data
-                    binaryWriter.Write(Common.EndianSwap(standardArea.messageCharAmount));
-                    binaryWriter.Write(standardArea.cellMessageWrite);
+                    binaryWriter.Write(Common.EndianSwap(standardArea.MessageLength));
+                    binaryWriter.Write(standardArea.MessageRawData);
 
                     // Color Start
                     binaryWriter.Write(Common.EndianSwap(0x00000004));
@@ -214,20 +221,20 @@ namespace SUFcoTool
                     binaryWriter.Write(Common.EndianSwap(standardArea.ColorMain.ColorEnd));
                     binaryWriter.Write(Common.EndianSwap(0x00000003));
 
-                    Cell.TextAlign alignConv = (Cell.TextAlign)Enum.Parse(typeof(Cell.TextAlign), standardArea.alignment.ToString());
+                    Cell.TextAlign alignConv = (Cell.TextAlign)Enum.Parse(typeof(Cell.TextAlign), standardArea.Alignment.ToString());
                     binaryWriter.Write(Common.EndianSwap((int)alignConv));
 
-                    if (standardArea.highlightList != null)
+                    if (standardArea.Highlights != null)
                     {
-                        binaryWriter.Write(Common.EndianSwap(standardArea.highlightList.Count));
-                        for (int h = 0; h < standardArea.highlightList.Count; h++)
+                        binaryWriter.Write(Common.EndianSwap(standardArea.Highlights.Count));
+                        for (int h = 0; h < standardArea.Highlights.Count; h++)
                         {
-                            var highlights = standardArea.highlightList[h];
+                            var highlights = standardArea.Highlights[h];
                             Common.WriteXMLColor(binaryWriter, highlights);
                         }
                     }
 
-                    if (standardArea.highlightList != null)
+                    if (standardArea.Highlights != null)
                     {
                         binaryWriter.Write(Common.EndianSwap(0x00000000));
                     }
