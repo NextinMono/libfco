@@ -46,7 +46,10 @@ namespace SUFontTool.FCO
 
         public void Write(string in_Path)
         {
-            JsonConvert.SerializeObject(Tables["Standard"]);
+            string fileContent = JsonConvert.SerializeObject(Tables["Standard"]);
+            if (!Path.HasExtension(in_Path)) in_Path += ".json";
+            if (File.Exists(in_Path)) File.Delete(in_Path);
+            File.WriteAllText(in_Path, fileContent);
         }
     }
 }

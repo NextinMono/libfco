@@ -232,7 +232,8 @@ namespace SUFcoTool
             byte[] bytes = new byte[numberChars / 2];
             for (int i = 0; i < numberChars; i += 2)
             {
-                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+                var substr = hex.Substring(i, 2);
+                bytes[i / 2] = Convert.ToByte(substr, 16);
             }
             return bytes;
         }

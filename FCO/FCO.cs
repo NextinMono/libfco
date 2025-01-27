@@ -205,9 +205,10 @@ namespace SUFcoTool
                     binaryWriter.Write(Common.EndianSwap(standardArea.Name.Length));
                     Common.ConvString(binaryWriter, Common.PadString(standardArea.Name, '@'));
 
+                    string unformattedConverseIDs = standardArea.MessageConverseIDs.Replace(", ", "").Replace(" ", "");
                     //Message Data
-                    binaryWriter.Write(Common.EndianSwap(standardArea.MessageLength));
-                    binaryWriter.Write(standardArea.MessageRawData);
+                    binaryWriter.Write(Common.EndianSwap(unformattedConverseIDs.Length / 8));
+                    binaryWriter.Write(Common.StringToByteArray(unformattedConverseIDs));
 
                     // Color Start
                     binaryWriter.Write(Common.EndianSwap(0x00000004));

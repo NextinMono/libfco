@@ -112,10 +112,14 @@ namespace SUFcoTool
         public static string RawTXTtoHEX(string text, List<TranslationTable.Entry> entries)
         {
             //Convert all the entries into a regex pattern
-            string pattern = string.Join("|", entries.ConvertAll(r => Regex.Escape(r.Letter)));
-
-            string result = Regex.Replace(text, pattern, match =>
+            var entriesRegex = entries.ConvertAll(r => r.Letter != "" ? Regex.Escape(r.Letter) : "");
+            //Remove all entries that are empty to avoid the regex filter bugging out
+            entriesRegex.RemoveAll(x => x == "");
+            string pattern = string.Join("|", entriesRegex);
+            string returnVal = text;
+            string result = Regex.Replace(returnVal, pattern, match =>
             {
+                string key = match.Value;
                 foreach (var replacement in entries)
                 {
                     //In case the table contains empty entries, ignore them
@@ -125,10 +129,10 @@ namespace SUFcoTool
                     string separator = match.Index == text.Length - 1 ? "" : ", ";
 
                     //If the letter corresponds to an entry, replace it with the ID string
-                    if (replacement.Letter == match.Value)
+                    if (replacement.Letter == key)
                         return replacement.HexString + separator;
                 }
-                return match.Value;
+                return key;
             });
             return result;
         }
