@@ -6,10 +6,11 @@ using SUFontTool.FCO;
 
 namespace SUFcoTool
 {
-    public class FCO
+    public partial class FCO
     {        
+        public ConverseHeaderPackage Header;
         public List<Group> Groups = new List<Group>();
-        public TranslationTable TranslationTable;
+        public TranslationTable? TranslationTable;
 
         /// <summary>
         /// Reads a .fco file and returns a struct.
@@ -17,98 +18,28 @@ namespace SUFcoTool
         /// <param name="in_Path">Path to the .fco file</param>
         /// <param name="in_PathTable">Path to the translation table, this can be left as blank to get the raw fco data.</param>
         /// <returns></returns>
-        public static FCO Read(string in_Path, string in_PathTable = "")
+        public static FCO Read(string in_Path, string in_PathTable = "", bool in_IsGensTemp = true)
         {           
             //Common.fcoTable
             FileStream fileStream = new FileStream(in_Path, FileMode.Open, FileAccess.Read);
             BinaryReader binaryReader = new BinaryReader(fileStream);
-            Encoding UTF8Encoding = Encoding.GetEncoding("UTF-8");      // Names of Groups and Cells are in UTF-8
 
-            FCO fCO = new FCO();
+            FCO fcoFile = new FCO();
             if(!string.IsNullOrEmpty(in_PathTable))
-            fCO.TranslationTable = TranslationTable.Read(in_PathTable);
+                fcoFile.TranslationTable = TranslationTable.Read(in_PathTable);
+
             try
             {
-                // Start Parse
-                binaryReader.ReadInt64();   // This is 0x04 and 0x00
+                // Header (always 0x4 and 0x0)
+                fcoFile.Header = ConverseHeaderPackage.Read(binaryReader);   
 
-                // Groups
+                // Amount of groups
                 int groupCount = Common.EndianSwap(binaryReader.ReadInt32());
 
+                // Parse all groups
                 for (int g = 0; g < groupCount; g++)
                 {
-                    Group groupData = new Group();
-
-                    // Group Name
-                    groupData.Name = UTF8Encoding.GetString(binaryReader.ReadBytes(Common.EndianSwap(binaryReader.ReadInt32())));
-                    Common.SkipPadding(binaryReader);
-
-                    // Cells count
-                    int cellCount = Common.EndianSwap(binaryReader.ReadInt32());
-
-                    // Cells
-                    List<Cell> Cells = new List<Cell>();
-                    for (int c = 0; c < cellCount; c++)
-                    {
-                        Cell cellData = new Cell();
-
-                        // Cell's name
-                        cellData.Name = UTF8Encoding.GetString(binaryReader.ReadBytes(Common.EndianSwap(binaryReader.ReadInt32())));
-                        Common.SkipPadding(binaryReader);
-
-                        int messageLength = Common.EndianSwap(binaryReader.ReadInt32());
-                        byte[] cellMessageBytes = binaryReader.ReadBytes(messageLength * 4);
-                        string rawMessageData = BitConverter.ToString(cellMessageBytes).Replace('-', ' ');
-                        cellData.Message = TranslationService.HEXtoTXT(rawMessageData, fCO.TranslationTable);
-                        cellData.MessageConverseIDs = Common.FormatEvery4Bytes(cellMessageBytes);
-                        binaryReader.ReadInt32();   // This is 0x04 before Colors
-
-                        // Main Text Color
-                        Color ColorMain = new Color();
-                        Common.ReadFCOColor(binaryReader, ref ColorMain);
-                        cellData.ColorMain = ColorMain;
-
-                        // Check what this is
-                        Color ColorSub1 = new Color();
-                        Common.ReadFCOColor(binaryReader, ref ColorSub1);
-                        cellData.ColorSub1 = ColorSub1;
-
-                        // Check what this is
-                        Color ColorSub2 = new Color();
-                        Common.ReadFCOColor(binaryReader, ref ColorSub2);
-                        cellData.ColorSub2 = ColorSub2;
-
-                        binaryReader.ReadInt32();   // I'm still unsure what these values do    // int ColorExtraStart = 
-                        binaryReader.ReadInt32();                                               // int ColorExtraEnd =
-                        binaryReader.ReadInt32();   // This 0x03 marks the very end of the data
-
-                        // Alignment
-                        int alignment = Common.EndianSwap(binaryReader.ReadInt32());
-                        if (alignment > 3) alignment = 0;
-                        var enumDisplayStatus = (Cell.TextAlign)alignment;
-                        cellData.Alignment = enumDisplayStatus;
-
-                        // Highlights
-                        var highlightCount = Common.EndianSwap(binaryReader.ReadInt32());  // If this is anything but 0, it's the highlight count in the cell
-
-                        List<Color> Highlights = new List<Color>();
-                        for (int h = 0; h < highlightCount; h++)
-                        {
-                            Color hightlightData = new Color();
-                            Common.ReadFCOColor(binaryReader, ref hightlightData);
-                            Highlights.Add(hightlightData);
-                        }
-                        cellData.Highlights = Highlights;
-
-                        // End of Cell
-                        binaryReader.ReadInt32();   // Yet to find out what this really does mean..
-                        Cells.Add(cellData);
-                        /*  This will add together the following into the Cell Struct:
-                            Cell Name, Message, Color0, Color1, Color2 and (possibly) Highlights */
-                    }
-
-                    groupData.CellList = Cells;     // This will put every Cell into a Group
-                    fCO.Groups.Add(groupData);          // This adds all the Groups together
+                    fcoFile.Groups.Add(Group.Read(binaryReader, fcoFile.TranslationTable, in_IsGensTemp));
                 }
             }
             catch (EndOfStreamException e)
@@ -118,7 +49,7 @@ namespace SUFcoTool
 
             binaryReader.Close();
             binaryReader.Dispose();
-            return fCO;
+            return fcoFile;
         }
 
         public void WriteXML(string path)
@@ -161,7 +92,7 @@ namespace SUFcoTool
                     Common.WriteFCOColor(writer, cell.ColorSub2);
                     writer.WriteEndElement();
 
-                    foreach (Color highlight in cell.Highlights)
+                    foreach (CellColor highlight in cell.Highlights)
                     {
                         writer.WriteStartElement("Highlight" + cell.Highlights.IndexOf(highlight));
                         Common.WriteFCOColor(writer, highlight);
@@ -218,8 +149,8 @@ namespace SUFcoTool
                     Common.WriteXMLColor(binaryWriter, standardArea.ColorSub2);  // Check
 
                     //End Colors
-                    binaryWriter.Write(Common.EndianSwap(standardArea.ColorMain.ColorStart));
-                    binaryWriter.Write(Common.EndianSwap(standardArea.ColorMain.ColorEnd));
+                    binaryWriter.Write(Common.EndianSwap(standardArea.ColorMain.Start));
+                    binaryWriter.Write(Common.EndianSwap(standardArea.ColorMain.End));
                     binaryWriter.Write(Common.EndianSwap(0x00000003));
 
                     Cell.TextAlign alignConv = (Cell.TextAlign)Enum.Parse(typeof(Cell.TextAlign), standardArea.Alignment.ToString());

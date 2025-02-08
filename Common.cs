@@ -175,6 +175,25 @@ namespace SUFcoTool
             int b = BitConverter.ToInt32(x, 0);
             return b;
         }
+        public static string ReadAscii(BinaryReader reader)
+        {
+            int stringLength = Common.EndianSwap(reader.ReadInt32());
+
+            byte[] stringBuffer = reader.ReadBytes(stringLength);
+            string result = Encoding.ASCII.GetString(stringBuffer);
+
+            // Check for @ padding
+            while (reader.BaseStream.Position % 4 != 0)
+            {
+                char padding = (char)reader.ReadByte();
+                if (padding != '@')
+                {
+                    throw new InvalidDataException("Invalid padding character");
+                }
+            }
+
+            return result;
+        }
 
         public static float EndianSwapFloat(float a)
         {
@@ -201,28 +220,16 @@ namespace SUFcoTool
                 }
             }
         }
-
-        public static void ReadFCOColor(BinaryReader binaryReader, ref Color ColorType)
+        public static void WriteFCOColor(XmlWriter writer, CellColor ColorType)
         {
-            ColorType.ColorStart = EndianSwap(binaryReader.ReadInt32());
-            ColorType.ColorEnd = EndianSwap(binaryReader.ReadInt32());
-            ColorType.ColorMarker = EndianSwap(binaryReader.ReadInt32());
-            ColorType.ColorAlpha = binaryReader.ReadByte();
-            ColorType.ColorRed = binaryReader.ReadByte();
-            ColorType.ColorGreen = binaryReader.ReadByte();
-            ColorType.ColorBlue = binaryReader.ReadByte();
-        }
+            writer.WriteAttributeString("Start", ColorType.Start.ToString());
+            writer.WriteAttributeString("End", ColorType.End.ToString());
+            writer.WriteAttributeString("Marker", ColorType.Marker.ToString());
 
-        public static void WriteFCOColor(XmlWriter writer, Color ColorType)
-        {
-            writer.WriteAttributeString("Start", ColorType.ColorStart.ToString());
-            writer.WriteAttributeString("End", ColorType.ColorEnd.ToString());
-            writer.WriteAttributeString("Marker", ColorType.ColorMarker.ToString());
-
-            writer.WriteAttributeString("Alpha", ColorType.ColorAlpha.ToString());
-            writer.WriteAttributeString("Red", ColorType.ColorRed.ToString());
-            writer.WriteAttributeString("Green", ColorType.ColorGreen.ToString());
-            writer.WriteAttributeString("Blue", ColorType.ColorBlue.ToString());
+            writer.WriteAttributeString("Alpha", ColorType.ArgbColor.W.ToString());
+            writer.WriteAttributeString("Red", ColorType.ArgbColor.X.ToString());
+            writer.WriteAttributeString("Green", ColorType.ArgbColor.Y.ToString());
+            writer.WriteAttributeString("Blue", ColorType.ArgbColor.Z.ToString());
         }
 
         // XML Functions
@@ -238,17 +245,20 @@ namespace SUFcoTool
             return bytes;
         }
 
-        public static void ReadXMLColor(ref Color ColorType, XmlElement? ColorNode)
+        public static void ReadXMLColor(ref CellColor ColorType, XmlElement? ColorNode)
         {
             try
             {
-                ColorType.ColorStart = int.Parse(ColorNode.Attributes.GetNamedItem("Start")!.Value!);
-                ColorType.ColorEnd = int.Parse(ColorNode.Attributes.GetNamedItem("End")!.Value!);
-                ColorType.ColorMarker = int.Parse(ColorNode.Attributes.GetNamedItem("Marker")!.Value!);
-                ColorType.ColorAlpha = byte.Parse(ColorNode.Attributes.GetNamedItem("Alpha")!.Value!);
-                ColorType.ColorRed = byte.Parse(ColorNode.Attributes.GetNamedItem("Red")!.Value!);
-                ColorType.ColorGreen = byte.Parse(ColorNode.Attributes.GetNamedItem("Green")!.Value!);
-                ColorType.ColorBlue = byte.Parse(ColorNode.Attributes.GetNamedItem("Blue")!.Value!);
+                ColorType.Start = int.Parse(ColorNode.Attributes.GetNamedItem("Start")!.Value!);
+                ColorType.End = int.Parse(ColorNode.Attributes.GetNamedItem("End")!.Value!);
+                ColorType.Marker = int.Parse(ColorNode.Attributes.GetNamedItem("Marker")!.Value!);
+                ColorType.ArgbColor = new System.Numerics.Vector4
+                {
+                    W = byte.Parse(ColorNode.Attributes.GetNamedItem("Alpha")!.Value!),
+                    X = byte.Parse(ColorNode.Attributes.GetNamedItem("Red")!.Value!),
+                    Y = byte.Parse(ColorNode.Attributes.GetNamedItem("Green")!.Value!),
+                    Z = byte.Parse(ColorNode.Attributes.GetNamedItem("Blue")!.Value!)
+                };
             }
             catch (FormatException e)
             {
@@ -261,15 +271,13 @@ namespace SUFcoTool
             }
         }
 
-        public static void WriteXMLColor(BinaryWriter binaryWriter, Color ColorType)
+        public static void WriteXMLColor(BinaryWriter binaryWriter, CellColor ColorType)
         {
-            binaryWriter.Write(Common.EndianSwap(ColorType.ColorStart));
-            binaryWriter.Write(Common.EndianSwap(ColorType.ColorEnd));
-            binaryWriter.Write(Common.EndianSwap(ColorType.ColorMarker));
-            binaryWriter.Write(ColorType.ColorAlpha);
-            binaryWriter.Write(ColorType.ColorRed);
-            binaryWriter.Write(ColorType.ColorGreen);
-            binaryWriter.Write(ColorType.ColorBlue);
+            binaryWriter.Write(Common.EndianSwap(ColorType.Start));
+            binaryWriter.Write(Common.EndianSwap(ColorType.End));
+            binaryWriter.Write(Common.EndianSwap(ColorType.Marker));
+            byte[] color = ColorType.GetColorAsBytes();
+            binaryWriter.Write(color);
         }
 
         public static string PadString(string input, char fillerChar)

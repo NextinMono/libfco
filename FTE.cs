@@ -1,87 +1,60 @@
 using System.Xml;
 using System.Text;
-using System.Numerics;
-
 
 namespace SUFcoTool
 {
     public class FTE
     {
+        public ConverseHeaderPackage Header;
         public List<Texture> Textures = new List<Texture>();
         public List<Character> Characters = new List<Character>();
 
-        public static FTE Read(string in_Path)
+        public static FTE Read(string in_Path, bool in_IsGensTemp = true)
         {
             FileStream fileStream = new FileStream(in_Path, FileMode.Open, FileAccess.Read);
             BinaryReader binaryReader = new BinaryReader(fileStream);
             Encoding UTF8Encoding = Encoding.GetEncoding("UTF-8");
-            FTE fTE = new FTE();
+            FTE fteFile = new FTE();
             try
             {
                 // Start Parse
-                binaryReader.ReadInt64();   // This is always the same
+                fteFile.Header = ConverseHeaderPackage.Read(binaryReader);
 
                 // Textures
                 int textureCount = Common.EndianSwap(binaryReader.ReadInt32());
 
                 for (int i = 0; i < textureCount; i++)
                 {
-                    Texture textureData = new Texture();
-
-                    // Texture Name
-                    textureData.Name = UTF8Encoding.GetString(binaryReader.ReadBytes(Common.EndianSwap(binaryReader.ReadInt32())));
-                    Common.SkipPadding(binaryReader);
-
-                    textureData.Size = new Vector2(Common.EndianSwap(binaryReader.ReadInt32()), Common.EndianSwap(binaryReader.ReadInt32()));
-
-                    fTE.Textures.Add(textureData);
+                    fteFile.Textures.Add(Texture.Read(binaryReader, in_IsGensTemp));
                 }
 
                 // Characters
                 int charaCount = Common.EndianSwap(binaryReader.ReadInt32());
-
-                int CurrentID = 100;
-                bool IndexChange = false;
-
+                int charaIndex = 100;
+                bool iconsOver = false;
+                if (in_IsGensTemp) fteFile.Characters.Capacity = 13;
                 for (int i = 0; i < charaCount; i++)
                 {
-                    Character charaData = new Character();
-
-                    charaData.TextureIndex = Common.EndianSwap(binaryReader.ReadInt32());
-
-                    if (charaData.TextureIndex == 2 && IndexChange == false)
+                    Character charaData = Character.Read(binaryReader, charaIndex, fteFile.Textures, in_IsGensTemp);
+                    if (!in_IsGensTemp)
                     {
-                        CurrentID += 100;
-                        IndexChange = true;
+                        if (charaData.TextureIndex == 2 && !iconsOver)
+                        {
+                            charaIndex += 100;
+                            iconsOver = true;
+                        }
                     }
-
-                    charaData.FcoCharacterID = CurrentID.ToString("X8").Insert(2, " ").Insert(5, " ").Insert(8, " ");
-
-                    var TexSizeX = fTE.Textures[charaData.TextureIndex].Size.X;
-                    var TexSizeY = fTE.Textures[charaData.TextureIndex].Size.Y;
-
-                    charaData.TopLeft = new Vector2(TexSizeX * Common.EndianSwapFloat(binaryReader.ReadSingle()), TexSizeY * Common.EndianSwapFloat(binaryReader.ReadSingle()));
-                    charaData.BottomRight = new Vector2(TexSizeX * Common.EndianSwapFloat(binaryReader.ReadSingle()), TexSizeY * Common.EndianSwapFloat(binaryReader.ReadSingle()));
-                 
-
-                    fTE.Characters.Add(charaData);
-                    CurrentID++;
+                    fteFile.Characters.Add(charaData);
+                    charaIndex++;
                 }
             }
             catch (EndOfStreamException e)
             {
-                Console.WriteLine(e);
-
-                Console.WriteLine("\nERROR: Exception occurred during parsing at: 0x" + unchecked((int)binaryReader.BaseStream.Position).ToString("X") + ".");
-                Console.WriteLine("There is a structural abnormality within the FTE file!");
-                Console.WriteLine("\nPress Enter to Exit.");
-                Console.Read();
-
                 throw;
             }
 
             binaryReader.Close();
-            return fTE;
+            return fteFile;
         }
         public void WriteFTE(string path)
         {

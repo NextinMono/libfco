@@ -1,4 +1,7 @@
-﻿namespace SUFcoTool
+﻿using SUFontTool.FCO;
+using System.Text;
+
+namespace SUFcoTool
 {
     public class Cell
     {
@@ -14,10 +17,59 @@
         public string MessageConverseIDs { get; set; }
         public byte[] MessageRawData { get; set; }
         public int MessageLength { get; set; }
-        public Color ColorMain { get; set; }
-        public Color ColorSub1 { get; set; }
-        public Color ColorSub2 { get; set; }
+        public CellColor ColorMain { get; set; }
+        public CellColor ColorSub1 { get; set; }
+        public CellColor ColorSub2 { get; set; }
         public TextAlign Alignment { get; set; }
-        public List<Color> Highlights { get; set; }
+        public List<CellColor> Highlights { get; set; }
+        public static Cell Read(BinaryReader in_Reader, TranslationTable in_Table, bool in_IsGens)
+        {
+            Cell cellData = new Cell();
+            Encoding encoding = Encoding.GetEncoding("UTF-8");
+            // Cell's name
+            cellData.Name = encoding.GetString(in_Reader.ReadBytes(Common.EndianSwap(in_Reader.ReadInt32())));
+            Common.SkipPadding(in_Reader);
+
+            int messageLength = Common.EndianSwap(in_Reader.ReadInt32());
+            byte[] cellMessageBytes = in_Reader.ReadBytes(messageLength * 4);
+            string rawMessageData = BitConverter.ToString(cellMessageBytes).Replace('-', ' ');
+            cellData.Message = TranslationService.HEXtoTXT(rawMessageData, in_Table);
+            cellData.MessageConverseIDs = Common.FormatEvery4Bytes(cellMessageBytes);
+            in_Reader.ReadInt32();   // This is 0x04 before Colors
+
+            if (!in_IsGens)
+            {
+                // Main Text Color
+                cellData.ColorMain = CellColor.Read(in_Reader);
+                cellData.ColorSub1 = CellColor.Read(in_Reader);
+                cellData.ColorSub2 = CellColor.Read(in_Reader);
+
+                in_Reader.ReadInt32();   // I'm still unsure what these values do    // int ColorExtraStart = 
+                in_Reader.ReadInt32();                                               // int ColorExtraEnd =
+                in_Reader.ReadInt32();   // This 0x03 marks the very end of the data
+
+                // Alignment
+                int alignment = Common.EndianSwap(in_Reader.ReadInt32());
+                if (alignment > 3) alignment = 0;
+                var enumDisplayStatus = (Cell.TextAlign)alignment;
+                cellData.Alignment = enumDisplayStatus;
+            }
+
+
+            int test = in_Reader.ReadInt32();
+            // Highlights
+            var highlightCount = Common.EndianSwap(test);  // If this is anything but 0, it's the highlight count in the cell
+
+            List<CellColor> Highlights = new List<CellColor>();
+            for (int h = 0; h < highlightCount; h++)
+            {
+                Highlights.Add(CellColor.Read(in_Reader));
+            }
+            cellData.Highlights = Highlights;
+
+            // End of Cell
+            in_Reader.ReadInt32();   // Yet to find out what this really does mean..
+            return cellData;
+        }
     }
 }

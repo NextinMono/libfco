@@ -84,32 +84,32 @@ namespace SUFcoTool
 
                                     if (ColorNode.Name == "ColorMain")
                                     {
-                                        Color ColorMain = new Color();
+                                        CellColor ColorMain = new CellColor();
                                         Common.ReadXMLColor(ref ColorMain, ColorNode);
                                         cell.ColorMain = ColorMain;
                                     }
 
                                     if (ColorNode2.Name == "ColorSub1")
                                     {
-                                        Color ColorSub1 = new Color();
+                                        CellColor ColorSub1 = new CellColor();
                                         Common.ReadXMLColor(ref ColorSub1, ColorNode2);
                                         cell.ColorSub1 = ColorSub1;
                                     }
 
                                     if (ColorNode3.Name == "ColorSub2")
                                     {
-                                        Color ColorSub2 = new Color();
+                                        CellColor ColorSub2 = new CellColor();
                                         Common.ReadXMLColor(ref ColorSub2, ColorNode3);
                                         cell.ColorSub2 = ColorSub2;
                                     }
 
-                                    List<Color> highlights = new List<Color>();
+                                    List<CellColor> highlights = new List<CellColor>();
                                     int workCount = 0;
                                     foreach (XmlElement highlightNode in cellNode.ChildNodes)
                                     {
                                         if (highlightNode.Name == "Highlight" + workCount)
                                         {
-                                            Color highlight = new Color();
+                                            CellColor highlight = new CellColor();
                                             Common.ReadXMLColor(ref highlight, highlightNode);
                                             highlights.Add(highlight);
                                             cell.Highlights = highlights;
