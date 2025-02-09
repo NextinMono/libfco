@@ -17,9 +17,9 @@ namespace SUFcoTool
         public string MessageConverseIDs { get; set; }
         public byte[] MessageRawData { get; set; }
         public int MessageLength { get; set; }
-        public CellColor ColorMain { get; set; }
-        public CellColor ColorSub1 { get; set; }
-        public CellColor ColorSub2 { get; set; }
+        public CellColor MainColor { get; set; }
+        public CellColor ExtraColor1 { get; set; }
+        public CellColor ExtraColor2 { get; set; }
         public TextAlign Alignment { get; set; }
         public List<CellColor> Highlights { get; set; }
         public static Cell Read(BinaryReader in_Reader, TranslationTable in_Table, bool in_IsGens)
@@ -40,17 +40,17 @@ namespace SUFcoTool
             if (!in_IsGens)
             {
                 // Main Text Color
-                cellData.ColorMain = CellColor.Read(in_Reader);
-                cellData.ColorSub1 = CellColor.Read(in_Reader);
-                cellData.ColorSub2 = CellColor.Read(in_Reader);
+                cellData.MainColor = CellColor.Read(in_Reader);
+                // Unknown, might not be colors (according to Hedgeturd)
+                cellData.ExtraColor1 = CellColor.Read(in_Reader);
+                cellData.ExtraColor2 = CellColor.Read(in_Reader);
 
                 in_Reader.ReadInt32();   // I'm still unsure what these values do    // int ColorExtraStart = 
                 in_Reader.ReadInt32();                                               // int ColorExtraEnd =
                 in_Reader.ReadInt32();   // This 0x03 marks the very end of the data
 
                 // Alignment
-                int alignment = Common.EndianSwap(in_Reader.ReadInt32());
-                if (alignment > 3) alignment = 0;
+                int alignment = Math.Clamp(Common.EndianSwap(in_Reader.ReadInt32()), 0, 3);
                 var enumDisplayStatus = (Cell.TextAlign)alignment;
                 cellData.Alignment = enumDisplayStatus;
             }
@@ -60,12 +60,12 @@ namespace SUFcoTool
             // Highlights
             var highlightCount = Common.EndianSwap(test);  // If this is anything but 0, it's the highlight count in the cell
 
-            List<CellColor> Highlights = new List<CellColor>();
+            List<CellColor> highlights = new List<CellColor>();
             for (int h = 0; h < highlightCount; h++)
             {
-                Highlights.Add(CellColor.Read(in_Reader));
+                highlights.Add(CellColor.Read(in_Reader));
             }
-            cellData.Highlights = Highlights;
+            cellData.Highlights = highlights;
 
             // End of Cell
             in_Reader.ReadInt32();   // Yet to find out what this really does mean..

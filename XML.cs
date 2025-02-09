@@ -86,21 +86,21 @@ namespace SUFcoTool
                                     {
                                         CellColor ColorMain = new CellColor();
                                         Common.ReadXMLColor(ref ColorMain, ColorNode);
-                                        cell.ColorMain = ColorMain;
+                                        cell.MainColor = ColorMain;
                                     }
 
                                     if (ColorNode2.Name == "ColorSub1")
                                     {
                                         CellColor ColorSub1 = new CellColor();
                                         Common.ReadXMLColor(ref ColorSub1, ColorNode2);
-                                        cell.ColorSub1 = ColorSub1;
+                                        cell.ExtraColor1 = ColorSub1;
                                     }
 
                                     if (ColorNode3.Name == "ColorSub2")
                                     {
                                         CellColor ColorSub2 = new CellColor();
                                         Common.ReadXMLColor(ref ColorSub2, ColorNode3);
-                                        cell.ColorSub2 = ColorSub2;
+                                        cell.ExtraColor2 = ColorSub2;
                                     }
 
                                     List<CellColor> highlights = new List<CellColor>();

@@ -81,15 +81,15 @@ namespace SUFcoTool
                     writer.WriteEndElement();
 
                     writer.WriteStartElement("ColorMain");
-                    Common.WriteFCOColor(writer, cell.ColorMain);
+                    Common.WriteFCOColor(writer, cell.MainColor);
                     writer.WriteEndElement();
 
                     writer.WriteStartElement("ColorSub1");                                 // Actually figure out what this was again
-                    Common.WriteFCOColor(writer, cell.ColorSub1);
+                    Common.WriteFCOColor(writer, cell.ExtraColor1);
                     writer.WriteEndElement();
 
                     writer.WriteStartElement("ColorSub2");                                 // Actually figure out what this was again
-                    Common.WriteFCOColor(writer, cell.ColorSub2);
+                    Common.WriteFCOColor(writer, cell.ExtraColor2);
                     writer.WriteEndElement();
 
                     foreach (CellColor highlight in cell.Highlights)
@@ -144,13 +144,13 @@ namespace SUFcoTool
                     // Color Start
                     binaryWriter.Write(Common.EndianSwap(0x00000004));
 
-                    Common.WriteXMLColor(binaryWriter, standardArea.ColorMain);  // Text Colors
-                    Common.WriteXMLColor(binaryWriter, standardArea.ColorSub1);  // Check
-                    Common.WriteXMLColor(binaryWriter, standardArea.ColorSub2);  // Check
+                    Common.WriteXMLColor(binaryWriter, standardArea.MainColor);  // Text Colors
+                    Common.WriteXMLColor(binaryWriter, standardArea.ExtraColor1);  // Check
+                    Common.WriteXMLColor(binaryWriter, standardArea.ExtraColor2);  // Check
 
                     //End Colors
-                    binaryWriter.Write(Common.EndianSwap(standardArea.ColorMain.Start));
-                    binaryWriter.Write(Common.EndianSwap(standardArea.ColorMain.End));
+                    binaryWriter.Write(Common.EndianSwap(standardArea.MainColor.Start));
+                    binaryWriter.Write(Common.EndianSwap(standardArea.MainColor.End));
                     binaryWriter.Write(Common.EndianSwap(0x00000003));
 
                     Cell.TextAlign alignConv = (Cell.TextAlign)Enum.Parse(typeof(Cell.TextAlign), standardArea.Alignment.ToString());
