@@ -1,4 +1,5 @@
-﻿namespace SUFcoTool
+﻿
+namespace SUFcoTool
 {
     public struct ConverseHeaderPackage
     {
@@ -10,6 +11,11 @@
             header.Field00 = in_BinaryReader.ReadInt32();
             header.Field04 = in_BinaryReader.ReadInt32();
             return header;
+        }
+        public void Write(BinaryWriter binaryWriter)
+        {
+            binaryWriter.Write(Common.EndianSwap(Field00));
+            binaryWriter.Write(Common.EndianSwap(Field04));
         }
     }
 }

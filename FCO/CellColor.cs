@@ -40,5 +40,14 @@ namespace SUFcoTool
             ];
             return bytes;
         }
+
+        internal void Write(BinaryWriter binaryWriter)
+        {
+            binaryWriter.Write(Common.EndianSwap(Start));
+            binaryWriter.Write(Common.EndianSwap(End));
+            binaryWriter.Write(Common.EndianSwap(Marker));
+            byte[] color = GetColorAsBytes();
+            binaryWriter.Write(color);
+        }
     }
 }

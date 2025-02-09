@@ -71,5 +71,55 @@ namespace SUFcoTool
             in_Reader.ReadInt32();   // Yet to find out what this really does mean..
             return cellData;
         }
+
+        public void Write(BinaryWriter binaryWriter)
+        {
+            // Cell Name
+            binaryWriter.Write(Common.EndianSwap(Name.Length));
+            Common.ConvString(binaryWriter, Common.PadString(Name, '@'));
+
+            string unformattedConverseIDs = MessageConverseIDs.Replace(", ", "").Replace(" ", "");
+
+            //Message Data
+            binaryWriter.Write(Common.EndianSwap(unformattedConverseIDs.Length / 8));
+            binaryWriter.Write(Common.StringToByteArray(unformattedConverseIDs));
+
+            // Color Start
+            binaryWriter.Write(Common.EndianSwap(0x00000004));
+
+            //Main text color
+            MainColor.Write(binaryWriter);
+
+            //Unknown, might not be colors
+            ExtraColor1.Write(binaryWriter);
+            ExtraColor2.Write(binaryWriter);
+
+            //End Colors
+            binaryWriter.Write(Common.EndianSwap(MainColor.Start));
+            binaryWriter.Write(Common.EndianSwap(MainColor.End));
+            binaryWriter.Write(Common.EndianSwap(0x00000003));
+
+            Cell.TextAlign alignConv = (Cell.TextAlign)Enum.Parse(typeof(Cell.TextAlign), Alignment.ToString());
+            binaryWriter.Write(Common.EndianSwap((int)alignConv));
+
+            if (Highlights != null)
+            {
+                binaryWriter.Write(Common.EndianSwap(Highlights.Count));
+                foreach (CellColor highlightColor in Highlights)
+                {
+                    highlightColor.Write(binaryWriter);
+                }
+            }
+
+            if (Highlights != null)
+            {
+                binaryWriter.Write(Common.EndianSwap(0x00000000));
+            }
+            else
+            {
+                binaryWriter.Write(Common.EndianSwap(0x00000000));
+                binaryWriter.Write(Common.EndianSwap(0x00000000));
+            }
+        }
     }
 }

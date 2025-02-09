@@ -27,5 +27,18 @@ namespace SUFcoTool
             }
             return groupData;
         }
+
+        public void Write(BinaryWriter binaryWriter)
+        {
+            binaryWriter.Write(Common.EndianSwap(Name.Length));
+            Common.ConvString(binaryWriter, Common.PadString(Name, '@'));
+
+            // Cell Count
+            binaryWriter.Write(Common.EndianSwap(CellList.Count));
+            foreach (Cell cell in CellList)
+            {
+                cell.Write(binaryWriter);
+            }
+        }
     }
 }

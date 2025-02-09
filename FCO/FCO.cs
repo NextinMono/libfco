@@ -116,68 +116,16 @@ namespace SUFcoTool
             BinaryWriter binaryWriter = new BinaryWriter(File.Open(path, FileMode.OpenOrCreate));
 
             // Writing Header
-            binaryWriter.Write(Common.EndianSwap(0x00000004));
-            binaryWriter.Write(0x00000000);
+            Header.Write(binaryWriter);
 
             // Group Count
             binaryWriter.Write(Common.EndianSwap(Groups.Count));
-            for (int g = 0; g < Groups.Count; g++)
+
+            //Write groups
+            foreach (Group group in Groups)
             {
-                // Group Name
-                binaryWriter.Write(Common.EndianSwap(Groups[g].Name.Length));
-                Common.ConvString(binaryWriter, Common.PadString(Groups[g].Name, '@'));
-
-                // Cell Count
-                binaryWriter.Write(Common.EndianSwap(Groups[g].CellList.Count));
-                for (int c = 0; c < Groups[g].CellList.Count; c++)
-                {
-                    var standardArea = Groups[g].CellList[c];
-                    // Cell Name
-                    binaryWriter.Write(Common.EndianSwap(standardArea.Name.Length));
-                    Common.ConvString(binaryWriter, Common.PadString(standardArea.Name, '@'));
-
-                    string unformattedConverseIDs = standardArea.MessageConverseIDs.Replace(", ", "").Replace(" ", "");
-                    //Message Data
-                    binaryWriter.Write(Common.EndianSwap(unformattedConverseIDs.Length / 8));
-                    binaryWriter.Write(Common.StringToByteArray(unformattedConverseIDs));
-
-                    // Color Start
-                    binaryWriter.Write(Common.EndianSwap(0x00000004));
-
-                    Common.WriteXMLColor(binaryWriter, standardArea.MainColor);  // Text Colors
-                    Common.WriteXMLColor(binaryWriter, standardArea.ExtraColor1);  // Check
-                    Common.WriteXMLColor(binaryWriter, standardArea.ExtraColor2);  // Check
-
-                    //End Colors
-                    binaryWriter.Write(Common.EndianSwap(standardArea.MainColor.Start));
-                    binaryWriter.Write(Common.EndianSwap(standardArea.MainColor.End));
-                    binaryWriter.Write(Common.EndianSwap(0x00000003));
-
-                    Cell.TextAlign alignConv = (Cell.TextAlign)Enum.Parse(typeof(Cell.TextAlign), standardArea.Alignment.ToString());
-                    binaryWriter.Write(Common.EndianSwap((int)alignConv));
-
-                    if (standardArea.Highlights != null)
-                    {
-                        binaryWriter.Write(Common.EndianSwap(standardArea.Highlights.Count));
-                        for (int h = 0; h < standardArea.Highlights.Count; h++)
-                        {
-                            var highlights = standardArea.Highlights[h];
-                            Common.WriteXMLColor(binaryWriter, highlights);
-                        }
-                    }
-
-                    if (standardArea.Highlights != null)
-                    {
-                        binaryWriter.Write(Common.EndianSwap(0x00000000));
-                    }
-                    else
-                    {
-                        binaryWriter.Write(Common.EndianSwap(0x00000000));
-                        binaryWriter.Write(Common.EndianSwap(0x00000000));
-                    }
-                }
+                group.Write(binaryWriter);
             }
-
             binaryWriter.Close();
         }
     }
