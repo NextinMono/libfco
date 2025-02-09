@@ -19,8 +19,8 @@ namespace SUFcoTool
             {
                 // Start Parse
                 fteFile.Header = ConverseHeaderPackage.Read(binaryReader);
-
                 bool in_IsGensTemp = fteFile.Header.Field04 != 0;
+
                 // Textures
                 int textureCount = Common.EndianSwap(binaryReader.ReadInt32());
 

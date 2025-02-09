@@ -1,14 +1,13 @@
 using System.Xml;
 using System.Text;
-using SUFcoTool;
 using SUFontTool.FCO;
-
 
 namespace SUFcoTool
 {
     public partial class FCO
     {        
         public ConverseHeaderPackage Header;
+        public string? MasterGroupName;
         public List<Group> Groups = new List<Group>();
         public TranslationTable? TranslationTable;
 
@@ -25,33 +24,29 @@ namespace SUFcoTool
             BinaryReader binaryReader = new BinaryReader(fileStream);
 
             FCO fcoFile = new FCO();
-            if(!string.IsNullOrEmpty(in_PathTable))
+            if (!string.IsNullOrEmpty(in_PathTable))
                 fcoFile.TranslationTable = TranslationTable.Read(in_PathTable);
 
-            try
+            // Header
+            fcoFile.Header = ConverseHeaderPackage.Read(binaryReader);
+
+            //Apparently gens fcos use 1, unleashed fcos use 0
+            if (fcoFile.Header.Field04 != 0)
             {
-                // Header
-                fcoFile.Header = ConverseHeaderPackage.Read(binaryReader);
+                int masterGroupCount = Common.EndianSwap(binaryReader.ReadInt32());
 
-                //Apparently gens fcos use 1, unleashed fcos use 0
-                if (fcoFile.Header.Field04 != 0)
-                {
-                    int masterGroupCount = Common.EndianSwap(binaryReader.ReadInt32());
-                    var unk1 = binaryReader.ReadInt32();
-                    var masterGroupName = binaryReader.ReadInt32();
-                }
-                // Amount of groups
-                int groupCount = Common.EndianSwap(binaryReader.ReadInt32());
+                Encoding encoding = Encoding.GetEncoding("UTF-8");
 
-                // Parse all groups
-                for (int g = 0; g < groupCount; g++)
-                {
-                    fcoFile.Groups.Add(Group.Read(binaryReader, fcoFile.TranslationTable, in_IsGensTemp));
-                }
+                fcoFile.MasterGroupName = encoding.GetString(binaryReader.ReadBytes(Common.EndianSwap(binaryReader.ReadInt32())));
+                Common.SkipPadding(binaryReader);
             }
-            catch (EndOfStreamException e)
+            // Amount of groups
+            int groupCount = Common.EndianSwap(binaryReader.ReadInt32());
+
+            // Parse all groups
+            for (int g = 0; g < groupCount; g++)
             {
-                throw;
+                fcoFile.Groups.Add(Group.Read(binaryReader, fcoFile.TranslationTable, in_IsGensTemp));
             }
 
             binaryReader.Close();
@@ -124,7 +119,14 @@ namespace SUFcoTool
 
             // Writing Header
             Header.Write(binaryWriter);
+            if (Header.Field04 != 0)
+            {
+                //Master group count (always 1 in gens according to brianuu)
+                binaryWriter.Write(Common.EndianSwap(1));
 
+                binaryWriter.Write(Common.EndianSwap(MasterGroupName.Length));
+                Common.ConvString(binaryWriter, Common.PadString(MasterGroupName, '@'));
+            }
             // Group Count
             binaryWriter.Write(Common.EndianSwap(Groups.Count));
 

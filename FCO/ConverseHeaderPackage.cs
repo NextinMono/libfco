@@ -8,8 +8,8 @@ namespace SUFcoTool
         public static ConverseHeaderPackage Read(BinaryReader in_BinaryReader)
         {
             ConverseHeaderPackage header = new ConverseHeaderPackage();
-            header.Field00 = in_BinaryReader.ReadInt32();
-            header.Field04 = in_BinaryReader.ReadInt32();
+            header.Field00 = Common.EndianSwap(in_BinaryReader.ReadInt32());
+            header.Field04 = Common.EndianSwap(in_BinaryReader.ReadInt32());
             return header;
         }
         public void Write(BinaryWriter binaryWriter)
