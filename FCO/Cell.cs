@@ -5,6 +5,17 @@ namespace SUFcoTool
 {
     public class Cell
     {
+        public Cell() { }
+        public Cell(string name, string message)
+        {
+            Name = name;
+            Message = message;
+            MainColor = new CellColor();
+            ExtraColor1 = new CellColor();
+            ExtraColor2 = new CellColor();
+            MessageConverseIDs = "";
+        }
+
         public enum TextAlign
         {
             Left = 0,

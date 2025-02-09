@@ -4,7 +4,7 @@ namespace SUFcoTool
 {
     public class CellColor
     {
-        public Vector4 ArgbColor { get; set; }
+        public Vector4 ArgbColor { get; set; } = new Vector4(1, 1, 1, 1);
         public int Start { get; set; }
         public int End { get; set; }
         public int Marker { get; set; }

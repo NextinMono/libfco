@@ -5,6 +5,13 @@ namespace SUFcoTool
 {
     public struct Group
     {
+        public Group(string in_Name)
+        {
+            Name = in_Name;
+            CellList = new List<Cell>();
+            CellList.Add(new Cell("New_Cell", ""));
+        }
+
         public string Name { get; set; }
         public List<Cell> CellList { get; set; }
         public static Group Read(BinaryReader in_Reader, TranslationTable in_Table, bool in_IsGens)

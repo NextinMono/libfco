@@ -30,9 +30,16 @@ namespace SUFcoTool
 
             try
             {
-                // Header (always 0x4 and 0x0)
-                fcoFile.Header = ConverseHeaderPackage.Read(binaryReader);   
+                // Header
+                fcoFile.Header = ConverseHeaderPackage.Read(binaryReader);
 
+                //Apparently gens fcos use 1, unleashed fcos use 0
+                if (fcoFile.Header.Field04 != 0)
+                {
+                    int masterGroupCount = Common.EndianSwap(binaryReader.ReadInt32());
+                    var unk1 = binaryReader.ReadInt32();
+                    var masterGroupName = binaryReader.ReadInt32();
+                }
                 // Amount of groups
                 int groupCount = Common.EndianSwap(binaryReader.ReadInt32());
 
@@ -111,9 +118,9 @@ namespace SUFcoTool
             Console.WriteLine("XML written!");
         }
 
-        public void Write(string path)
+        public void Write(string in_Path)
         {
-            BinaryWriter binaryWriter = new BinaryWriter(File.Open(path, FileMode.OpenOrCreate));
+            BinaryWriter binaryWriter = new BinaryWriter(File.Open(in_Path, FileMode.OpenOrCreate));
 
             // Writing Header
             Header.Write(binaryWriter);

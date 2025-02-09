@@ -9,7 +9,7 @@ namespace SUFcoTool
         public List<Texture> Textures = new List<Texture>();
         public List<Character> Characters = new List<Character>();
 
-        public static FTE Read(string in_Path, bool in_IsGensTemp = true)
+        public static FTE Read(string in_Path)
         {
             FileStream fileStream = new FileStream(in_Path, FileMode.Open, FileAccess.Read);
             BinaryReader binaryReader = new BinaryReader(fileStream);
@@ -20,6 +20,7 @@ namespace SUFcoTool
                 // Start Parse
                 fteFile.Header = ConverseHeaderPackage.Read(binaryReader);
 
+                bool in_IsGensTemp = fteFile.Header.Field04 != 0;
                 // Textures
                 int textureCount = Common.EndianSwap(binaryReader.ReadInt32());
 
