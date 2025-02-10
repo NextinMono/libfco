@@ -1,3 +1,4 @@
+using Amicitia.IO.Binary;
 using SUFcoTool;
 using System.Text;
 using System.Xml;
@@ -175,15 +176,15 @@ namespace SUFcoTool
             int b = BitConverter.ToInt32(x, 0);
             return b;
         }
-        public static string ReadAscii(BinaryReader reader)
+        public static string ReadAscii(BinaryObjectReader reader)
         {
-            int stringLength = Common.EndianSwap(reader.ReadInt32());
+            int stringLength = reader.ReadInt32();
 
-            byte[] stringBuffer = reader.ReadBytes(stringLength);
+            byte[] stringBuffer = reader.ReadArray<byte>(stringLength);
             string result = Encoding.ASCII.GetString(stringBuffer);
 
             // Check for @ padding
-            while (reader.BaseStream.Position % 4 != 0)
+            while (reader.Position % 4 != 0)
             {
                 char padding = (char)reader.ReadByte();
                 if (padding != '@')
@@ -224,7 +225,7 @@ namespace SUFcoTool
         {
             writer.WriteAttributeString("Start", ColorType.Start.ToString());
             writer.WriteAttributeString("End", ColorType.End.ToString());
-            writer.WriteAttributeString("Marker", ColorType.Marker.ToString());
+            writer.WriteAttributeString("Marker", ColorType.FieldC.ToString());
 
             writer.WriteAttributeString("Alpha", ColorType.ArgbColor.W.ToString());
             writer.WriteAttributeString("Red", ColorType.ArgbColor.X.ToString());
@@ -251,7 +252,7 @@ namespace SUFcoTool
             {
                 ColorType.Start = int.Parse(ColorNode.Attributes.GetNamedItem("Start")!.Value!);
                 ColorType.End = int.Parse(ColorNode.Attributes.GetNamedItem("End")!.Value!);
-                ColorType.Marker = int.Parse(ColorNode.Attributes.GetNamedItem("Marker")!.Value!);
+                ColorType.FieldC = int.Parse(ColorNode.Attributes.GetNamedItem("Marker")!.Value!);
                 ColorType.ArgbColor = new System.Numerics.Vector4
                 {
                     W = byte.Parse(ColorNode.Attributes.GetNamedItem("Alpha")!.Value!),
@@ -270,16 +271,13 @@ namespace SUFcoTool
                 throw;
             }
         }
-
-        public static void WriteXMLColor(BinaryWriter binaryWriter, CellColor ColorType)
+        public static void WriteStringTemp(BinaryObjectWriter writer, string text)
         {
-            binaryWriter.Write(Common.EndianSwap(ColorType.Start));
-            binaryWriter.Write(Common.EndianSwap(ColorType.End));
-            binaryWriter.Write(Common.EndianSwap(ColorType.Marker));
-            byte[] color = ColorType.GetColorAsBytes();
-            binaryWriter.Write(color);
+            writer.WriteString(StringBinaryFormat.PrefixedLength32, text);
+            int namePadding = (4 - text.Length % 4) % 4;
+            string nameWithPadding = "".PadRight(namePadding, '@');
+            writer.WriteString(StringBinaryFormat.FixedLength, nameWithPadding, nameWithPadding.Length);
         }
-
         public static string PadString(string input, char fillerChar)
         {
             int padding = (4 - input.Length % 4) % 4;

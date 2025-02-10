@@ -1,9 +1,10 @@
-﻿using SUFontTool.FCO;
+﻿using Amicitia.IO.Binary;
+using SUFontTool.FCO;
 using System.Text;
 
 namespace SUFcoTool
 {
-    public struct Group
+    public struct Group : IBinarySerializable
     {
         public Group(string in_Name)
         {
@@ -14,37 +15,33 @@ namespace SUFcoTool
 
         public string Name { get; set; }
         public List<Cell> CellList { get; set; }
-        public static Group Read(BinaryReader in_Reader, TranslationTable in_Table, bool in_IsGens)
+        public void Read(BinaryObjectReader reader)
         {
-            Group groupData = new Group();
-            Encoding encoding = Encoding.GetEncoding("UTF-8");
-
             // Group Name
-            groupData.Name = encoding.GetString(in_Reader.ReadBytes(Common.EndianSwap(in_Reader.ReadInt32())));
-            Common.SkipPadding(in_Reader);
+            Name = Common.ReadAscii(reader);
 
             // Amount of cells (text containers)
-            int cellCount = Common.EndianSwap(in_Reader.ReadInt32());
+            int cellCount = reader.ReadInt32();
 
             //Read cells
-            groupData.CellList = new List<Cell>();
+            CellList = new List<Cell>();
             for (int c = 0; c < cellCount; c++)
             {
-                groupData.CellList.Add(Cell.Read(in_Reader, in_Table, in_IsGens));
+                CellList.Add(reader.ReadObject<Cell>());
             }
-            return groupData;
         }
 
-        public void Write(BinaryWriter binaryWriter)
+        public void Write(BinaryObjectWriter writer)
         {
-            binaryWriter.Write(Common.EndianSwap(Name.Length));
-            Common.ConvString(binaryWriter, Common.PadString(Name, '@'));
+            //writer.Write(Name.Length);
+            //Common.ConvString(writer, Common.PadString(Name, '@'));
 
+            Common.WriteStringTemp(writer, Name);
             // Cell Count
-            binaryWriter.Write(Common.EndianSwap(CellList.Count));
+            writer.Write(CellList.Count);
             foreach (Cell cell in CellList)
             {
-                cell.Write(binaryWriter);
+                writer.WriteObject(cell);
             }
         }
     }

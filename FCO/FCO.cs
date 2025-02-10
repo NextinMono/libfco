@@ -1,10 +1,11 @@
 using System.Xml;
 using System.Text;
 using SUFontTool.FCO;
+using Amicitia.IO.Binary;
 
 namespace SUFcoTool
 {
-    public partial class FCO
+    public partial class FCO : IBinarySerializable
     {        
         public ConverseHeaderPackage Header;
         public string? MasterGroupName;
@@ -17,42 +18,6 @@ namespace SUFcoTool
         /// <param name="in_Path">Path to the .fco file</param>
         /// <param name="in_PathTable">Path to the translation table, this can be left as blank to get the raw fco data.</param>
         /// <returns></returns>
-        public static FCO Read(string in_Path, string in_PathTable = "", bool in_IsGensTemp = true)
-        {           
-            //Common.fcoTable
-            FileStream fileStream = new FileStream(in_Path, FileMode.Open, FileAccess.Read);
-            BinaryReader binaryReader = new BinaryReader(fileStream);
-
-            FCO fcoFile = new FCO();
-            if (!string.IsNullOrEmpty(in_PathTable))
-                fcoFile.TranslationTable = TranslationTable.Read(in_PathTable);
-
-            // Header
-            fcoFile.Header = ConverseHeaderPackage.Read(binaryReader);
-
-            //Apparently gens fcos use 1, unleashed fcos use 0
-            if (fcoFile.Header.Field04 != 0)
-            {
-                int masterGroupCount = Common.EndianSwap(binaryReader.ReadInt32());
-
-                Encoding encoding = Encoding.GetEncoding("UTF-8");
-
-                fcoFile.MasterGroupName = encoding.GetString(binaryReader.ReadBytes(Common.EndianSwap(binaryReader.ReadInt32())));
-                Common.SkipPadding(binaryReader);
-            }
-            // Amount of groups
-            int groupCount = Common.EndianSwap(binaryReader.ReadInt32());
-
-            // Parse all groups
-            for (int g = 0; g < groupCount; g++)
-            {
-                fcoFile.Groups.Add(Group.Read(binaryReader, fcoFile.TranslationTable, in_IsGensTemp));
-            }
-
-            binaryReader.Close();
-            binaryReader.Dispose();
-            return fcoFile;
-        }
 
         public void WriteXML(string path)
         {
@@ -113,29 +78,47 @@ namespace SUFcoTool
             Console.WriteLine("XML written!");
         }
 
-        public void Write(string in_Path)
-        {
-            BinaryWriter binaryWriter = new BinaryWriter(File.Open(in_Path, FileMode.OpenOrCreate));
 
+        public void Read(BinaryObjectReader binaryReader)
+        {
+            // Header
+           Header = binaryReader.ReadObject<ConverseHeaderPackage>();
+
+            //Apparently gens fcos use 1, unleashed fcos use 0
+            if (Header.Field04 != 0)
+            {
+                int masterGroupCount = binaryReader.ReadInt32();
+                MasterGroupName = Common.ReadAscii(binaryReader);
+            }
+            // Amount of groups
+            int groupCount =binaryReader.ReadInt32();
+            
+            // Parse all groups
+            for (int g = 0; g < groupCount; g++)
+            {
+               Groups.Add(binaryReader.ReadObject<Group>());
+            }
+        }
+
+        public void Write(BinaryObjectWriter writer)
+        {
             // Writing Header
-            Header.Write(binaryWriter);
+            writer.WriteObject(Header);
             if (Header.Field04 != 0)
             {
                 //Master group count (always 1 in gens according to brianuu)
-                binaryWriter.Write(Common.EndianSwap(1));
+                writer.Write(1);
 
-                binaryWriter.Write(Common.EndianSwap(MasterGroupName.Length));
-                Common.ConvString(binaryWriter, Common.PadString(MasterGroupName, '@'));
+                Common.WriteStringTemp(writer, MasterGroupName);
             }
             // Group Count
-            binaryWriter.Write(Common.EndianSwap(Groups.Count));
+            writer.Write(Groups.Count);
 
             //Write groups
             foreach (Group group in Groups)
             {
-                group.Write(binaryWriter);
+                writer.WriteObject(group);
             }
-            binaryWriter.Close();
         }
     }
 }

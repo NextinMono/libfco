@@ -17,6 +17,10 @@
      <PackageReference Include="System.Drawing.Common" Version="8.0.7" />
    </ItemGroup>
 
+   <ItemGroup>
+     <ProjectReference Include="..\Amicitia.IO\src\Amicitia.IO\Amicitia.IO.csproj" />
+   </ItemGroup>
+
   <Target Name="CopyFiles" AfterTargets="Build">
     <ItemGroup>
       <FilesToCopy Include="$(SourceFolder)**\*.*" />

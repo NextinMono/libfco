@@ -1,96 +1,80 @@
 using System.Xml;
 using System.Text;
+using Amicitia.IO.Binary;
 
 namespace SUFcoTool
 {
-    public class FTE
+    public class FTE : IBinarySerializable
     {
         public ConverseHeaderPackage Header;
         public List<Texture> Textures = new List<Texture>();
         public List<Character> Characters = new List<Character>();
 
-        public static FTE Read(string in_Path)
+        
+       
+        public void Read(BinaryObjectReader reader)
         {
-            FileStream fileStream = new FileStream(in_Path, FileMode.Open, FileAccess.Read);
-            BinaryReader binaryReader = new BinaryReader(fileStream);
-            Encoding UTF8Encoding = Encoding.GetEncoding("UTF-8");
-            FTE fteFile = new FTE();
-            try
+            // Start Parse
+            Header = reader.Read<ConverseHeaderPackage>();
+
+            // Textures
+            int textureCount = reader.ReadInt32();
+
+            for (int i = 0; i < textureCount; i++)
             {
-                // Start Parse
-                fteFile.Header = ConverseHeaderPackage.Read(binaryReader);
-                bool in_IsGensTemp = fteFile.Header.Field04 != 0;
+                Textures.Add(reader.ReadObject<Texture>());
+            }
 
-                // Textures
-                int textureCount = Common.EndianSwap(binaryReader.ReadInt32());
-
-                for (int i = 0; i < textureCount; i++)
+            // Characters
+            int totalCharacterCount = reader.ReadInt32();
+            int characterID = 100;
+            //TODO: remove this
+            bool iconsOver = false;
+            //TODO: Carryover from brianuuu's stuff, what does this do?
+            if (Header.Field04 != 0) Characters.Capacity = 13;
+            for (int i = 0; i < totalCharacterCount; i++)
+            {
+                Character charaData = reader.ReadObject<Character>();
+                if (Header.Field04 != 0)
+                    reader.Seek(4, SeekOrigin.Current);
+                charaData.FcoCharacterID = characterID.ToString("X8").Insert(2, " ").Insert(5, " ").Insert(8, " ");
+                if (Header.Field04 == 0)
                 {
-                    fteFile.Textures.Add(Texture.Read(binaryReader, in_IsGensTemp));
-                }
-
-                // Characters
-                int charaCount = Common.EndianSwap(binaryReader.ReadInt32());
-                int charaIndex = 100;
-                bool iconsOver = false;
-                if (in_IsGensTemp) fteFile.Characters.Capacity = 13;
-                for (int i = 0; i < charaCount; i++)
-                {
-                    Character charaData = Character.Read(binaryReader, charaIndex, fteFile.Textures, in_IsGensTemp);
-                    if (!in_IsGensTemp)
+                    if (charaData.TextureIndex == 2 && !iconsOver)
                     {
-                        if (charaData.TextureIndex == 2 && !iconsOver)
-                        {
-                            charaIndex += 100;
-                            iconsOver = true;
-                        }
+                        characterID += 100;
+                        iconsOver = true;
                     }
-                    fteFile.Characters.Add(charaData);
-                    charaIndex++;
                 }
+                Characters.Add(charaData);
+                characterID++;
             }
-            catch (EndOfStreamException e)
-            {
-                throw;
-            }
-
-            binaryReader.Close();
-            return fteFile;
         }
-        public void WriteFTE(string path)
-        {
-            string filePath = Path.GetDirectoryName(path) + "\\" + Path.GetFileNameWithoutExtension(path);
-            File.Delete(Path.Combine(filePath + ".fte"));
-            BinaryWriter binaryWriter = new BinaryWriter(File.Open(filePath + ".fte", FileMode.OpenOrCreate));
 
-            // Writing Header
-            binaryWriter.Write(Common.EndianSwap(0x00000004));
-            binaryWriter.Write(0x00000000);
+        public void Write(BinaryObjectWriter writer)
+        {
+            writer.WriteObject(Header);
 
             // Texture Count
-            binaryWriter.Write(Common.EndianSwap(Textures.Count));
+            writer.Write(Textures.Count);
             for (int t = 0; t < Textures.Count; t++)
             {
-                binaryWriter.Write(Common.EndianSwap(Textures[t].Name.Length));
-                Common.ConvString(binaryWriter, Common.PadString(Textures[t].Name, '@'));
-                binaryWriter.Write(Common.EndianSwap((int)Textures[t].Size.X));
-                binaryWriter.Write(Common.EndianSwap((int)Textures[t].Size.Y));
+                writer.WriteObject(Textures[t]);                
             }
 
-            binaryWriter.Write(Common.EndianSwap(Characters.Count));
+            writer.Write(Characters.Count);
             for (int c = 0; c < Characters.Count; c++)
             {
                 var textureData = Textures[Characters[c].TextureIndex];
-                binaryWriter.Write(Common.EndianSwap(Characters[c].TextureIndex));
-                binaryWriter.Write(Common.EndianSwapFloat(Characters[c].TopLeft.X / textureData.Size.X));
-                binaryWriter.Write(Common.EndianSwapFloat(Characters[c].TopLeft.Y / textureData.Size.Y));
-                binaryWriter.Write(Common.EndianSwapFloat(Characters[c].BottomRight.X / textureData.Size.X));
-                binaryWriter.Write(Common.EndianSwapFloat(Characters[c].BottomRight.Y / textureData.Size.Y));
+                writer.Write(Characters[c].TextureIndex);
+                writer.Write(Common.EndianSwapFloat(Characters[c].TopLeft.X / textureData.Size.X));
+                writer.Write(Common.EndianSwapFloat(Characters[c].TopLeft.Y / textureData.Size.Y));
+                writer.Write(Common.EndianSwapFloat(Characters[c].BottomRight.X / textureData.Size.X));
+                writer.Write(Common.EndianSwapFloat(Characters[c].BottomRight.Y / textureData.Size.Y));
             }
-
-            binaryWriter.Close();
-            Console.WriteLine("FTE written!");
         }
+
+       
         public void WriteXML(string path)
         {
             File.Delete(Path.Combine(Path.GetFileNameWithoutExtension(path) + ".xml"));

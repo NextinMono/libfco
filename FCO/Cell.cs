@@ -1,9 +1,11 @@
 ﻿using SUFontTool.FCO;
 using System.Text;
+using Amicitia.IO;
+using Amicitia.IO.Binary;
 
 namespace SUFcoTool
 {
-    public class Cell
+    public class Cell : IBinarySerializable
     {
         public Cell() { }
         public Cell(string name, string message)
@@ -33,103 +35,95 @@ namespace SUFcoTool
         public CellColor ExtraColor2 { get; set; }
         public TextAlign Alignment { get; set; }
         public List<CellColor> Highlights { get; set; }
-        public static Cell Read(BinaryReader in_Reader, TranslationTable in_Table, bool in_IsGens)
+
+        public void Read(BinaryObjectReader reader)
         {
-            Cell cellData = new Cell();
-            Encoding encoding = Encoding.GetEncoding("UTF-8");
             // Cell's name
-            cellData.Name = encoding.GetString(in_Reader.ReadBytes(Common.EndianSwap(in_Reader.ReadInt32())));
-            Common.SkipPadding(in_Reader);
+            Name = Common.ReadAscii(reader);
+            //Common.SkipPadding(in_Reader);
 
-            int messageLength = Common.EndianSwap(in_Reader.ReadInt32());
-            byte[] cellMessageBytes = in_Reader.ReadBytes(messageLength * 4);
+            int messageLength = reader.ReadInt32();
+            byte[] cellMessageBytes = reader.ReadArray<byte>(messageLength * 4);
             string rawMessageData = BitConverter.ToString(cellMessageBytes).Replace('-', ' ');
-            cellData.Message = TranslationService.HEXtoTXT(rawMessageData, in_Table);
-            cellData.MessageConverseIDs = Common.FormatEvery4Bytes(cellMessageBytes);
-            in_Reader.ReadInt32();   // This is 0x04 before Colors
+            MessageConverseIDs = Common.FormatEvery4Bytes(cellMessageBytes);
+            reader.Seek(4, SeekOrigin.Current);   // This is 0x04 before Colors
 
-            if (!in_IsGens)
-            {
-                // Main Text Color
-                cellData.MainColor = CellColor.Read(in_Reader);
-                // Unknown, might not be colors (according to Hedgeturd)
-                cellData.ExtraColor1 = CellColor.Read(in_Reader);
-                cellData.ExtraColor2 = CellColor.Read(in_Reader);
+            // Main Text Color
+            MainColor = reader.ReadObject<CellColor>();
+            // Unknown, might not be colors (according to Hedgeturd)
+            ExtraColor1 = reader.ReadObject<CellColor>();
+            ExtraColor2 = reader.ReadObject<CellColor>();
 
-                in_Reader.ReadInt32();   // I'm still unsure what these values do    // int ColorExtraStart = 
-                in_Reader.ReadInt32();                                               // int ColorExtraEnd =
-                in_Reader.ReadInt32();   // This 0x03 marks the very end of the data
+            //Unknown values, the last 4 bytes (0x3) mark "the end of the data"
+            reader.Seek(0xC, SeekOrigin.Current);
 
-                // Alignment
-                int alignment = Math.Clamp(Common.EndianSwap(in_Reader.ReadInt32()), 0, 3);
-                var enumDisplayStatus = (Cell.TextAlign)alignment;
-                cellData.Alignment = enumDisplayStatus;
-            }
-
-
-            int test = in_Reader.ReadInt32();
-            // Highlights
-            var highlightCount = Common.EndianSwap(test);  // If this is anything but 0, it's the highlight count in the cell
+            // Alignment
+            int alignment = Math.Clamp(reader.ReadInt32(), 0, 3);
+            var enumDisplayStatus = (Cell.TextAlign)alignment;
+            Alignment = enumDisplayStatus;
+            // Highlight count - If this is anything but 0, it's the highlight count in the cell
+            int highlightCount = reader.ReadInt32();
 
             List<CellColor> highlights = new List<CellColor>();
             for (int h = 0; h < highlightCount; h++)
             {
-                highlights.Add(CellColor.Read(in_Reader));
+                highlights.Add(reader.ReadObject<CellColor>());
             }
-            cellData.Highlights = highlights;
+            Highlights = highlights;
 
             // End of Cell
-            in_Reader.ReadInt32();   // Yet to find out what this really does mean..
-            return cellData;
+            reader.Seek(0x4, SeekOrigin.Current);   // Yet to find out what this really does mean..
+            
         }
 
-        public void Write(BinaryWriter binaryWriter)
+        public void Write(BinaryObjectWriter binaryWriter)
         {
             // Cell Name
-            binaryWriter.Write(Common.EndianSwap(Name.Length));
-            Common.ConvString(binaryWriter, Common.PadString(Name, '@'));
+
+            Common.WriteStringTemp(binaryWriter, Name);
+            //binaryWriter.Write(Name.Length));
+            //Common.ConvString(binaryWriter, Common.PadString(Name, '@'));
 
             string unformattedConverseIDs = MessageConverseIDs.Replace(", ", "").Replace(" ", "");
 
             //Message Data
-            binaryWriter.Write(Common.EndianSwap(unformattedConverseIDs.Length / 8));
-            binaryWriter.Write(Common.StringToByteArray(unformattedConverseIDs));
+            binaryWriter.Write(unformattedConverseIDs.Length / 8);
+            binaryWriter.WriteArray(Common.StringToByteArray(unformattedConverseIDs));
 
             // Color Start
-            binaryWriter.Write(Common.EndianSwap(0x00000004));
+            binaryWriter.Write(0x00000004);
 
             //Main text color
-            MainColor.Write(binaryWriter);
-
+            binaryWriter.WriteObject<CellColor>(MainColor);
             //Unknown, might not be colors
-            ExtraColor1.Write(binaryWriter);
-            ExtraColor2.Write(binaryWriter);
+            binaryWriter.WriteObject<CellColor>(ExtraColor1);
+            binaryWriter.WriteObject<CellColor>(ExtraColor2);
 
             //End Colors
-            binaryWriter.Write(Common.EndianSwap(MainColor.Start));
-            binaryWriter.Write(Common.EndianSwap(MainColor.End));
-            binaryWriter.Write(Common.EndianSwap(0x00000003));
+            binaryWriter.Write(MainColor.Start);
+            binaryWriter.Write(MainColor.End);
+            binaryWriter.Write(0x00000003);
 
             Cell.TextAlign alignConv = (Cell.TextAlign)Enum.Parse(typeof(Cell.TextAlign), Alignment.ToString());
-            binaryWriter.Write(Common.EndianSwap((int)alignConv));
+            binaryWriter.Write((int)alignConv);
 
             if (Highlights != null)
             {
-                binaryWriter.Write(Common.EndianSwap(Highlights.Count));
+                binaryWriter.Write(Highlights.Count);
                 foreach (CellColor highlightColor in Highlights)
                 {
-                    highlightColor.Write(binaryWriter);
+                    binaryWriter.WriteObject(highlightColor);
                 }
             }
 
             if (Highlights != null)
             {
-                binaryWriter.Write(Common.EndianSwap(0x00000000));
+                binaryWriter.Write(0x00000000);
             }
             else
             {
-                binaryWriter.Write(Common.EndianSwap(0x00000000));
-                binaryWriter.Write(Common.EndianSwap(0x00000000));
+                binaryWriter.Write(0x00000000);
+                binaryWriter.Write(0x00000000);
             }
         }
     }

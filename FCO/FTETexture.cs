@@ -1,33 +1,42 @@
-﻿using System.Numerics;
+﻿using Amicitia.IO.Binary;
+using System.Numerics;
 using System.Text;
 
 namespace SUFcoTool
 {
-    public struct Texture
+    public struct Texture : IBinarySerializable
     {
         public string Name { get; set; }
         public Vector2 Size { get; set; }
-        public static Texture Read(BinaryReader in_BinaryReader, bool in_IsGens)
+
+        public void Read(BinaryObjectReader reader)
         {
-            // Names of Groups and Cells are in UTF-8
-            Encoding encoding = Encoding.GetEncoding("UTF-8");      
-            Texture textureData = new Texture();
-
             // Texture Name
-            if (in_IsGens)
-            {
-                textureData.Name = Common.ReadAscii(in_BinaryReader);
-            }
-            else
-            {
-                textureData.Name = encoding.GetString(in_BinaryReader.ReadBytes(Common.EndianSwap(in_BinaryReader.ReadInt32())));
-                Common.SkipPadding(in_BinaryReader);
-            }
+            Name = Common.ReadAscii(reader);
+            //if (in_IsGens)
+            //{
+            //    //textureData.Name = Common.ReadAscii(in_BinaryReader);
+            //}
+            //else
+            //{
+            //    textureData.Name = encoding.GetString(in_BinaryReader.ReadBytes(Common.EndianSwap(in_BinaryReader.ReadInt32())));
+            //    Common.SkipPadding(in_BinaryReader);
+            //}
 
-            int width = in_BinaryReader.ReadInt32();
-            int height = in_BinaryReader.ReadInt32();
-            textureData.Size = new Vector2(Common.EndianSwap(width), Common.EndianSwap(height));
-            return textureData;
+            int width = reader.ReadInt32();
+            int height = reader.ReadInt32();
+            Size = new Vector2(width, height);
+        }
+
+        public void Write(BinaryObjectWriter writer)
+        {
+            writer.WriteString(StringBinaryFormat.PrefixedLength32, Name);
+            int nameLength = Name.Length;
+            int namePadding = (4 - Name.Length % 4) % 4;
+            string nameWithPadding = "".PadRight(Name.Length + namePadding, '@');
+            writer.WriteString(StringBinaryFormat.FixedLength, nameWithPadding, nameWithPadding.Length);
+            writer.Write((int)Size.X);
+            writer.Write((int)Size.Y);
         }
     }
 }
