@@ -1,5 +1,4 @@
-﻿
-using Amicitia.IO.Binary;
+﻿using Amicitia.IO.Binary;
 
 namespace SUFcoTool
 {

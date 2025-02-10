@@ -5,12 +5,37 @@ namespace SUFontTool.FCO
     {
         public struct Entry
         {
+            private int m_CharacterID;
             public string Letter;
-            public string HexString;
-            public Entry(string letter, string hexString)
+
+            [JsonProperty(PropertyName = "HexString")]
+            public string LegacyString;
+            public int ConverseID
+            {
+                get
+                {
+                    //Legacy translation table from Hedgeturd will not have IDs but will have strings instead
+                    if(m_CharacterID == 0)
+                    {
+                        if(!string.IsNullOrEmpty(LegacyString))
+                            m_CharacterID = Convert.ToInt32(LegacyString.Replace(" ", ""), 16);
+                    }
+                    return m_CharacterID;
+                }
+                set
+                {
+                    m_CharacterID = value;
+                }
+            }  
+            //Used by Newtonsoft.Json to ignore writing the property
+            public bool ShouldSerializeLegacyString()
+            {
+                return false;
+            }
+            public Entry(string letter, int converseID)
             {
                 Letter = letter;
-                HexString = hexString;
+                ConverseID = converseID;
             }
         }
         public List<Entry> Standard 

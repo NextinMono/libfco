@@ -33,9 +33,6 @@ namespace SUFcoTool
 
         public void Write(BinaryObjectWriter writer)
         {
-            //writer.Write(Name.Length);
-            //Common.ConvString(writer, Common.PadString(Name, '@'));
-
             Common.WriteStringTemp(writer, Name);
             // Cell Count
             writer.Write(CellList.Count);

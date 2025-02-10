@@ -10,8 +10,6 @@ namespace SUFcoTool
         public List<Texture> Textures = new List<Texture>();
         public List<Character> Characters = new List<Character>();
 
-        
-       
         public void Read(BinaryObjectReader reader)
         {
             // Start Parse
@@ -37,7 +35,7 @@ namespace SUFcoTool
                 Character charaData = reader.ReadObject<Character>();
                 if (Header.Field04 != 0)
                     reader.Seek(4, SeekOrigin.Current);
-                charaData.FcoCharacterID = characterID.ToString("X8").Insert(2, " ").Insert(5, " ").Insert(8, " ");
+                charaData.CharacterID = characterID;
                 if (Header.Field04 == 0)
                 {
                     if (charaData.TextureIndex == 2 && !iconsOver)
@@ -67,59 +65,60 @@ namespace SUFcoTool
             {
                 var textureData = Textures[Characters[c].TextureIndex];
                 writer.Write(Characters[c].TextureIndex);
-                writer.Write(Common.EndianSwapFloat(Characters[c].TopLeft.X / textureData.Size.X));
-                writer.Write(Common.EndianSwapFloat(Characters[c].TopLeft.Y / textureData.Size.Y));
-                writer.Write(Common.EndianSwapFloat(Characters[c].BottomRight.X / textureData.Size.X));
-                writer.Write(Common.EndianSwapFloat(Characters[c].BottomRight.Y / textureData.Size.Y));
+                writer.Write(Characters[c].TopLeft.X);
+                writer.Write(Characters[c].TopLeft.Y);
+                writer.Write(Characters[c].BottomRight.X);
+                writer.Write(Characters[c].BottomRight.Y);
             }
         }
 
        
-        public void WriteXML(string path)
-        {
-            File.Delete(Path.Combine(Path.GetFileNameWithoutExtension(path) + ".xml"));
-
-            var xmlWriterSettings = new XmlWriterSettings { Indent = true };
-            using var writer = XmlWriter.Create(Path.GetDirectoryName(path) + "\\" +
-            Path.GetFileNameWithoutExtension(path) + ".xml", xmlWriterSettings);
-
-            writer.WriteStartDocument();
-            writer.WriteStartElement("FTE");
-
-            writer.WriteStartElement("Textures");
-            foreach (Texture texture in Textures)
-            {
-                writer.WriteStartElement("Texture");
-                writer.WriteAttributeString("Name", texture.Name);
-                writer.WriteAttributeString("Size_X", texture.Size.X.ToString());
-                writer.WriteAttributeString("Size_Y", texture.Size.Y.ToString());
-                writer.WriteEndElement();
-            }
-            writer.WriteEndElement();
-
-            writer.WriteComment("ConverseID = Hex, Points = Px, Point1 = TopLeft, Point2 = BottomRight");
-
-            writer.WriteStartElement("Characters");
-            foreach (Character character in Characters)
-            {
-                writer.WriteStartElement("Character");
-                writer.WriteAttributeString("TextureIndex", character.TextureIndex.ToString());
-                writer.WriteAttributeString("ConverseID", character.FcoCharacterID);
-                writer.WriteAttributeString("Point1_X", character.TopLeft.X.ToString());
-                writer.WriteAttributeString("Point1_Y", character.TopLeft.Y.ToString());
-                writer.WriteAttributeString("Point2_X", character.BottomRight.X.ToString());
-                writer.WriteAttributeString("Point2_Y", character.BottomRight.Y.ToString());
-                writer.WriteEndElement();
-            }
-            writer.WriteEndElement();
-
-            writer.WriteEndDocument();
-            writer.Close();
-
-            Textures.Clear();
-            Characters.Clear();
-
-            Console.WriteLine("XML written!");
-        }
+        
     }
 }
+//public void WriteXML(string path)
+//{
+//    File.Delete(Path.Combine(Path.GetFileNameWithoutExtension(path) + ".xml"));
+
+//    var xmlWriterSettings = new XmlWriterSettings { Indent = true };
+//    using var writer = XmlWriter.Create(Path.GetDirectoryName(path) + "\\" +
+//    Path.GetFileNameWithoutExtension(path) + ".xml", xmlWriterSettings);
+
+//    writer.WriteStartDocument();
+//    writer.WriteStartElement("FTE");
+
+//    writer.WriteStartElement("Textures");
+//    foreach (Texture texture in Textures)
+//    {
+//        writer.WriteStartElement("Texture");
+//        writer.WriteAttributeString("Name", texture.Name);
+//        writer.WriteAttributeString("Size_X", texture.Size.X.ToString());
+//        writer.WriteAttributeString("Size_Y", texture.Size.Y.ToString());
+//        writer.WriteEndElement();
+//    }
+//    writer.WriteEndElement();
+
+//    writer.WriteComment("ConverseID = Hex, Points = Px, Point1 = TopLeft, Point2 = BottomRight");
+
+//    writer.WriteStartElement("Characters");
+//    foreach (Character character in Characters)
+//    {
+//        writer.WriteStartElement("Character");
+//        writer.WriteAttributeString("TextureIndex", character.TextureIndex.ToString());
+//        writer.WriteAttributeString("ConverseID", character.FcoCharacterID);
+//        writer.WriteAttributeString("Point1_X", character.TopLeft.X.ToString());
+//        writer.WriteAttributeString("Point1_Y", character.TopLeft.Y.ToString());
+//        writer.WriteAttributeString("Point2_X", character.BottomRight.X.ToString());
+//        writer.WriteAttributeString("Point2_Y", character.BottomRight.Y.ToString());
+//        writer.WriteEndElement();
+//    }
+//    writer.WriteEndElement();
+
+//    writer.WriteEndDocument();
+//    writer.Close();
+
+//    Textures.Clear();
+//    Characters.Clear();
+
+//    Console.WriteLine("XML written!");
+//}

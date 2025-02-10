@@ -11,11 +11,9 @@ namespace SUFcoTool
         public Cell(string name, string message)
         {
             Name = name;
-            Message = message;
             MainColor = new CellColor();
             ExtraColor1 = new CellColor();
             ExtraColor2 = new CellColor();
-            MessageConverseIDs = "";
         }
 
         public enum TextAlign
@@ -26,10 +24,7 @@ namespace SUFcoTool
             Justified = 3
         }
         public string Name { get; set; }
-        public string Message { get; set; }
-        public string MessageConverseIDs { get; set; }
-        public byte[] MessageRawData { get; set; }
-        public int MessageLength { get; set; }
+        public int[] Message { get; set; }
         public CellColor MainColor { get; set; }
         public CellColor ExtraColor1 { get; set; }
         public CellColor ExtraColor2 { get; set; }
@@ -43,9 +38,9 @@ namespace SUFcoTool
             //Common.SkipPadding(in_Reader);
 
             int messageLength = reader.ReadInt32();
-            byte[] cellMessageBytes = reader.ReadArray<byte>(messageLength * 4);
-            string rawMessageData = BitConverter.ToString(cellMessageBytes).Replace('-', ' ');
-            MessageConverseIDs = Common.FormatEvery4Bytes(cellMessageBytes);
+            int[] cellMessageBytes = reader.ReadArray<int>(messageLength);
+            //string rawMessageData = BitConverter.ToString(cellMessageBytes).Replace('-', ' ');
+            Message = cellMessageBytes;
             reader.Seek(4, SeekOrigin.Current);   // This is 0x04 before Colors
 
             // Main Text Color
@@ -84,11 +79,10 @@ namespace SUFcoTool
             //binaryWriter.Write(Name.Length));
             //Common.ConvString(binaryWriter, Common.PadString(Name, '@'));
 
-            string unformattedConverseIDs = MessageConverseIDs.Replace(", ", "").Replace(" ", "");
 
             //Message Data
-            binaryWriter.Write(unformattedConverseIDs.Length / 8);
-            binaryWriter.WriteArray(Common.StringToByteArray(unformattedConverseIDs));
+            binaryWriter.Write(Message.Length);
+            binaryWriter.WriteArray(Message);
 
             // Color Start
             binaryWriter.Write(0x00000004);
