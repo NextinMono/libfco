@@ -1,9 +1,10 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SUFontTool", "SUFontTool.csproj", "{A5B57920-9B79-4B91-868B-898983A0B5CC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Amicitia.IO", "Amicitia.IO\src\Amicitia.IO\Amicitia.IO.csproj", "{361D4AFF-D518-4F71-AE22-60996AAC6336}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "libfco", "Source\libfco.csproj", "{ED2A6B11-00A3-4C28-9773-8D772D93F815}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +12,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A5B57920-9B79-4B91-868B-898983A0B5CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A5B57920-9B79-4B91-868B-898983A0B5CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A5B57920-9B79-4B91-868B-898983A0B5CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A5B57920-9B79-4B91-868B-898983A0B5CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{361D4AFF-D518-4F71-AE22-60996AAC6336}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{361D4AFF-D518-4F71-AE22-60996AAC6336}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{361D4AFF-D518-4F71-AE22-60996AAC6336}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{361D4AFF-D518-4F71-AE22-60996AAC6336}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED2A6B11-00A3-4C28-9773-8D772D93F815}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED2A6B11-00A3-4C28-9773-8D772D93F815}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED2A6B11-00A3-4C28-9773-8D772D93F815}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED2A6B11-00A3-4C28-9773-8D772D93F815}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -4,7 +4,7 @@ using Amicitia.IO.Binary;
 
 namespace SUFcoTool
 {
-    public class FontTableEntries : IBinarySerializable
+    public class FontTexture : IBinarySerializable
     {
         public ConverseHeaderPackage Header;
         public List<TextureEntry> Textures = new List<TextureEntry>();
@@ -29,14 +29,14 @@ namespace SUFcoTool
             //TODO: remove this
             bool iconsOver = false;
             //TODO: Carryover from brianuuu's stuff, what does this do?
-            if (Header.Field04 != 0) Characters.Capacity = 13;
+            if (Header.Version != 0) Characters.Capacity = 13;
             for (int i = 0; i < totalCharacterCount; i++)
             {
                 Character charaData = reader.ReadObject<Character>();
-                if (Header.Field04 != 0)
+                if (Header.Version != 0)
                     reader.Seek(4, SeekOrigin.Current);
                 charaData.CharacterID = characterID;
-                if (Header.Field04 == 0)
+                if (Header.Version == 0)
                 {
                     if (charaData.TextureIndex == 2 && !iconsOver)
                     {

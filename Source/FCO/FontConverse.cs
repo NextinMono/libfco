@@ -24,7 +24,7 @@ namespace SUFcoTool
            Header = binaryReader.ReadObject<ConverseHeaderPackage>();
 
             //Apparently gens fcos use 1, unleashed fcos use 0
-            if (Header.Field04 != 0)
+            if (Header.Version != 0)
             {
                 int masterGroupCount = binaryReader.ReadInt32();
                 MasterGroupName = Common.ReadAscii(binaryReader);
@@ -43,7 +43,7 @@ namespace SUFcoTool
         {
             // Writing Header
             writer.WriteObject(Header);
-            if (Header.Field04 != 0)
+            if (Header.Version != 0)
             {
                 //Master group count (always 1 in gens according to brianuu)
                 writer.Write(1);

@@ -1,35 +1,35 @@
-using System.Numerics;
-using System.Xml;
+//using System.Numerics;
+//using System.Xml;
 
 
-namespace SUFcoTool
-{
-    public static class XML
-    {
-        public static string tableNoName;
-        public static int texCount = 0, charaCount = 0, spriteIndex = 0;
-        public static bool FCO = false;
-        static List<Group> groups = new List<Group>();
-        public static List<TextureEntry> textures = new List<TextureEntry>();
-        public static List<Character> characters = new List<Character>();
+//namespace SUFcoTool
+//{
+//    public static class XML
+//    {
+//        public static string tableNoName;
+//        public static int texCount = 0, charaCount = 0, spriteIndex = 0;
+//        public static bool FCO = false;
+//        static List<Group> groups = new List<Group>();
+//        public static List<TextureEntry> textures = new List<TextureEntry>();
+//        public static List<Character> characters = new List<Character>();
 
-        static Cell.TextAlign GetAlignFromString(string in_String)
-        {
-            switch (in_String.ToLower())
-            {
-                case "left":
-                    return Cell.TextAlign.Left;
-                case "center":
-                    return Cell.TextAlign.Center;
-                case "right":
-                    return Cell.TextAlign.Right;
-                case "justified":
-                    return Cell.TextAlign.Justified;
-            }
-            return Cell.TextAlign.Left;
-        }
-    }
-}
+//        static Cell.TextAlign GetAlignFromString(string in_String)
+//        {
+//            switch (in_String.ToLower())
+//            {
+//                case "left":
+//                    return Cell.TextAlign.Left;
+//                case "center":
+//                    return Cell.TextAlign.Center;
+//                case "right":
+//                    return Cell.TextAlign.Right;
+//                case "justified":
+//                    return Cell.TextAlign.Justified;
+//            }
+//            return Cell.TextAlign.Left;
+//        }
+//    }
+//}
 //public static void ReadXML(string path)
 //{
 //    string filePath = Path.GetDirectoryName(path) + "\\" + Path.GetFileNameWithoutExtension(path);
