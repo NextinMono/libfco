@@ -1,6 +1,5 @@
 using System.Xml;
 using System.Text;
-using SUFontTool.FCO;
 using Amicitia.IO.Binary;
 
 namespace SUFcoTool
@@ -10,7 +9,6 @@ namespace SUFcoTool
         public ConverseHeaderPackage Header;
         public string? MasterGroupName;
         public List<Group> Groups = new List<Group>();
-        public TranslationTable? TranslationTable;
 
         /// <summary>
         /// Reads a .fco file and returns a struct.

@@ -1,5 +1,4 @@
-﻿using SUFontTool.FCO;
-using System.Text;
+﻿using System.Text;
 using Amicitia.IO;
 using Amicitia.IO.Binary;
 

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SUFcoTool
 {
-    public struct Texture : IBinarySerializable
+    public struct TextureEntry : IBinarySerializable
     {
         public string Name { get; set; }
         public Vector2 Size { get; set; }

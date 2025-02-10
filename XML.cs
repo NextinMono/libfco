@@ -1,4 +1,3 @@
-using SUFontTool.FCO;
 using System.Numerics;
 using System.Xml;
 
@@ -11,7 +10,7 @@ namespace SUFcoTool
         public static int texCount = 0, charaCount = 0, spriteIndex = 0;
         public static bool FCO = false;
         static List<Group> groups = new List<Group>();
-        public static List<Texture> textures = new List<Texture>();
+        public static List<TextureEntry> textures = new List<TextureEntry>();
         public static List<Character> characters = new List<Character>();
 
         static Cell.TextAlign GetAlignFromString(string in_String)
