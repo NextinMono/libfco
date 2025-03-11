@@ -6,7 +6,6 @@ namespace SUFcoTool
 {
     public class Cell : IBinarySerializable
     {
-
         public enum TextAlign
         {
             Left = 0,
@@ -31,12 +30,14 @@ namespace SUFcoTool
             Message = [];
             Highlights = new List<CellColor>();
         }
-        public Cell(string name, string message)
+        public Cell(string name)
         {
             Name = name;
+            Message = [];
             MainColor = new CellColor();
             ExtraColor1 = new CellColor();
             ExtraColor2 = new CellColor();
+            Highlights = new List<CellColor>();
         }
         public void Read(BinaryObjectReader reader)
         {

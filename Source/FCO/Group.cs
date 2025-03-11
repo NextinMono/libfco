@@ -9,7 +9,7 @@ namespace SUFcoTool
         {
             Name = in_Name;
             CellList = new List<Cell>();
-            CellList.Add(new Cell("New_Cell", ""));
+            CellList.Add(new Cell("New_Cell"));
         }
 
         public string Name { get; set; }

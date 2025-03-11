@@ -5,12 +5,17 @@ namespace SUFcoTool
 {
     public class CellColor : IBinarySerializable
     {
+
         public int Start { get; set; }
         public int End { get; set; }
         public int FieldC { get; set; }
-        public Vector4 ArgbColor { get; set; } = new Vector4(1, 1, 1, 1);
+        public Vector4 ArgbColor { get; set; }
 
 
+        public CellColor()
+        {
+            ArgbColor = new Vector4(1, 1, 1, 1);
+        }
         /// <summary>
         /// Returns ArgbColor as a byte array
         /// </summary>
