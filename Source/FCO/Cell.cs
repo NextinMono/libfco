@@ -24,9 +24,9 @@ namespace SUFcoTool
         public Cell()
         {
             Name = "NewCell";
-            MainColor = new CellColor();
-            ExtraColor1 = new CellColor();
-            ExtraColor2 = new CellColor();
+            MainColor = new CellColor(2);
+            ExtraColor1 = new CellColor(1);
+            ExtraColor2 = new CellColor(0);
             Message = [];
             Highlights = new List<CellColor>();
         }
@@ -34,9 +34,9 @@ namespace SUFcoTool
         {
             Name = name;
             Message = [];
-            MainColor = new CellColor();
-            ExtraColor1 = new CellColor();
-            ExtraColor2 = new CellColor();
+            MainColor = new CellColor(2);
+            ExtraColor1 = new CellColor(1);
+            ExtraColor2 = new CellColor(0);
             Highlights = new List<CellColor>();
         }
         public void Read(BinaryObjectReader reader)
