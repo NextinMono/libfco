@@ -20,24 +20,27 @@ namespace SUFcoTool
         public CellColor ExtraColor2 { get; set; }
         public TextAlign Alignment { get; set; }
         public List<CellColor> Highlights { get; set; }
+        public List<SubCell> SubCells { get; set; }
 
         public Cell()
         {
             Name = "NewCell";
-            MainColor = new CellColor(2);
-            ExtraColor1 = new CellColor(1);
-            ExtraColor2 = new CellColor(0);
+            MainColor = new CellColor();
+            ExtraColor1 = new CellColor();
+            ExtraColor2 = new CellColor();
             Message = [];
             Highlights = new List<CellColor>();
+            SubCells = new List<SubCell>();
         }
         public Cell(string name)
         {
             Name = name;
             Message = [];
-            MainColor = new CellColor(2);
-            ExtraColor1 = new CellColor(1);
-            ExtraColor2 = new CellColor(0);
+            MainColor = new CellColor();
+            ExtraColor1 = new CellColor();
+            ExtraColor2 = new CellColor();
             Highlights = new List<CellColor>();
+            SubCells = new List<SubCell>();
         }
         public void Read(BinaryObjectReader reader)
         {
@@ -59,11 +62,13 @@ namespace SUFcoTool
 
             //Unknown values, the last 4 bytes (0x3) mark "the end of the data"
             reader.Seek(0xC, SeekOrigin.Current);
+            // There's a good chance these values have some relation to the 3 clumps of data proceeding
 
             // Alignment
             int alignment = Math.Clamp(reader.ReadInt32(), 0, 3);
             var enumDisplayStatus = (Cell.TextAlign)alignment;
             Alignment = enumDisplayStatus;
+            
             // Highlight count - If this is anything but 0, it's the highlight count in the cell
             int highlightCount = reader.ReadInt32();
 
@@ -73,21 +78,25 @@ namespace SUFcoTool
                 highlights.Add(reader.ReadObject<CellColor>());
             }
             Highlights = highlights;
-
-            // End of Cell
-            reader.Seek(0x4, SeekOrigin.Current);   // Yet to find out what this really does mean..
             
+            //reader.Seek(0x4, SeekOrigin.Current);   // Yet to find out what this really does mean..
+            // I found out Nextin :D
+            int subCellCount = reader.ReadInt32();
+            List<SubCell> subcells = new List<SubCell>();
+            for (int s = 0; s < subCellCount; s++)
+            {
+                subcells.Add(reader.ReadObject<SubCell>());
+            }
+            SubCells = subcells;
         }
 
         public void Write(BinaryObjectWriter binaryWriter)
         {
             // Cell Name
-
             Common.WriteStringTemp(binaryWriter, Name);
             //binaryWriter.Write(Name.Length));
             //Common.ConvString(binaryWriter, Common.PadString(Name, '@'));
-
-
+            
             //Message Data
             binaryWriter.Write(Message.Length);
             binaryWriter.WriteArray(Message);
@@ -106,26 +115,20 @@ namespace SUFcoTool
             binaryWriter.Write(MainColor.End);
             binaryWriter.Write(0x00000003);
 
-            Cell.TextAlign alignConv = (Cell.TextAlign)Enum.Parse(typeof(Cell.TextAlign), Alignment.ToString());
+            // Cell Formatting
+            TextAlign alignConv = (TextAlign)Enum.Parse(typeof(TextAlign), Alignment.ToString());
             binaryWriter.Write((int)alignConv);
 
-            if (Highlights != null)
+            binaryWriter.Write(Highlights.Count);
+            foreach (CellColor highlightColor in Highlights)
             {
-                binaryWriter.Write(Highlights.Count);
-                foreach (CellColor highlightColor in Highlights)
-                {
-                    binaryWriter.WriteObject(highlightColor);
-                }
+                binaryWriter.WriteObject(highlightColor);
             }
-
-            if (Highlights != null)
+            
+            binaryWriter.Write(SubCells.Count);
+            foreach (SubCell subcell in SubCells)
             {
-                binaryWriter.Write(0x00000000);
-            }
-            else
-            {
-                binaryWriter.Write(0x00000000);
-                binaryWriter.Write(0x00000000);
+                binaryWriter.WriteObject(subcell);
             }
         }
     }
