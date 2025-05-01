@@ -8,12 +8,15 @@ namespace SUFcoTool
 
         public int Start { get; set; }
         public int End { get; set; }
-        public int FieldC { get; set; }
+        public int Type { get; set; }
         public Vector4 ArgbColor { get; set; }
-
 
         public CellColor()
         {
+        }
+        public CellColor(int in_Type)
+        {
+            Type = in_Type;
             ArgbColor = new Vector4(1, 1, 1, 1);
         }
         /// <summary>
@@ -36,7 +39,7 @@ namespace SUFcoTool
         {
             Start = reader.ReadInt32();
             End = reader.ReadInt32();
-            FieldC = reader.ReadInt32();
+            Type = reader.ReadInt32();
             ArgbColor = new Vector4
             {
                 W = reader.ReadByte() / 255.0f,
@@ -50,7 +53,7 @@ namespace SUFcoTool
         {
             writer.Write(Start);
             writer.Write(End);
-            writer.Write(FieldC);
+            writer.Write(Type);
             writer.WriteArray(GetColorAsBytes());
         }
     }

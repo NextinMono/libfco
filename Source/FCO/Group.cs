@@ -3,17 +3,21 @@ using System.Text;
 
 namespace SUFcoTool
 {
-    public struct Group : IBinarySerializable
+    public class Group : IBinarySerializable
     {
+        public string Name { get; set; }
+        public List<Cell> CellList { get; set; }
+
         public Group(string in_Name)
         {
             Name = in_Name;
             CellList = new List<Cell>();
             CellList.Add(new Cell("New_Cell"));
         }
-
-        public string Name { get; set; }
-        public List<Cell> CellList { get; set; }
+        public Group()
+        {
+            CellList = new List<Cell>();
+        }
         public void Read(BinaryObjectReader reader)
         {
             // Group Name
