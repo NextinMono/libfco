@@ -1,6 +1,6 @@
 ﻿using Amicitia.IO.Binary;
 
-namespace SUFcoTool
+namespace libfco
 {
     public struct ConverseHeaderPackage : IBinarySerializable
     {

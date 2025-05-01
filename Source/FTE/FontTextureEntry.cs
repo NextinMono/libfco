@@ -1,7 +1,7 @@
 ﻿using Amicitia.IO.Binary;
 using System.Numerics;
 
-namespace SUFcoTool
+namespace libfco
 {
     public struct TextureEntry : IBinarySerializable
     {

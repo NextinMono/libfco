@@ -1,7 +1,7 @@
 using Amicitia.IO.Binary;
 using System.Text;
 
-namespace SUFcoTool
+namespace libfco
 {
     class Common
     {

@@ -2,7 +2,7 @@ using System.Xml;
 using System.Text;
 using Amicitia.IO.Binary;
 
-namespace SUFcoTool
+namespace libfco
 {
     public partial class FontConverse : IBinarySerializable
     {        

@@ -2,7 +2,7 @@
 using Amicitia.IO;
 using Amicitia.IO.Binary;
 
-namespace SUFcoTool
+namespace libfco
 {
     public class Cell : IBinarySerializable
     {
@@ -25,22 +25,16 @@ namespace SUFcoTool
         public Cell()
         {
             Name = "NewCell";
-            MainColor = new CellColor();
-            ExtraColor1 = new CellColor();
-            ExtraColor2 = new CellColor();
+            MainColor = new CellColor(2);
+            ExtraColor1 = new CellColor(1);
+            ExtraColor2 = new CellColor(0);
             Message = [];
             Highlights = new List<CellColor>();
             SubCells = new List<SubCell>();
         }
-        public Cell(string name)
+        public Cell(string name) : this()
         {
             Name = name;
-            Message = [];
-            MainColor = new CellColor();
-            ExtraColor1 = new CellColor();
-            ExtraColor2 = new CellColor();
-            Highlights = new List<CellColor>();
-            SubCells = new List<SubCell>();
         }
         public void Read(BinaryObjectReader reader)
         {

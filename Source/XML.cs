@@ -2,7 +2,7 @@
 //using System.Xml;
 
 
-//namespace SUFcoTool
+//namespace libfco
 //{
 //    public static class XML
 //    {

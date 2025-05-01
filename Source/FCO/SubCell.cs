@@ -2,7 +2,7 @@
 using Amicitia.IO;
 using Amicitia.IO.Binary;
 
-namespace SUFcoTool
+namespace libfco
 {
     public class SubCell : IBinarySerializable
     {
