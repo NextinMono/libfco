@@ -5,23 +5,15 @@ using Amicitia.IO.Binary;
 namespace libfco
 {
     public partial class FontConverse : IBinarySerializable
-    {        
+    {
         public ConverseHeaderPackage Header;
         public string? MasterGroupName;
         public List<Group> Groups = new List<Group>();
 
-        /// <summary>
-        /// Reads a .fco file and returns a struct.
-        /// </summary>
-        /// <param name="in_Path">Path to the .fco file</param>
-        /// <param name="in_PathTable">Path to the translation table, this can be left as blank to get the raw fco data.</param>
-        /// <returns></returns>
-
-        
         public void Read(BinaryObjectReader binaryReader)
         {
             // Header
-           Header = binaryReader.ReadObject<ConverseHeaderPackage>();
+            Header = binaryReader.ReadObject<ConverseHeaderPackage>();
 
             //Apparently gens fcos use 1, unleashed fcos use 0
             if (Header.Version != 0)
@@ -30,12 +22,12 @@ namespace libfco
                 MasterGroupName = Common.ReadAscii(binaryReader);
             }
             // Amount of groups
-            int groupCount =binaryReader.ReadInt32();
-            
+            int groupCount = binaryReader.ReadInt32();
+
             // Parse all groups
             for (int g = 0; g < groupCount; g++)
             {
-               Groups.Add(binaryReader.ReadObject<Group>());
+                Groups.Add(binaryReader.ReadObject<Group>());
             }
         }
 

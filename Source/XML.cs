@@ -120,7 +120,7 @@
 
 //                            cells.Add(cell);
 //                        }
-//                        group.CellList = cells;
+//                        group.Cells = cells;
 //                    }
 //                    groups.Add(group);
 //                }
@@ -188,7 +188,7 @@
 //        writer.WriteStartElement("Group");
 //        writer.WriteAttributeString("Name", group.Name);
 
-//        foreach (Cell cell in group.CellList)
+//        foreach (Cell cell in group.Cells)
 //        {
 //            writer.WriteStartElement("Cell");
 //            writer.WriteAttributeString("Name", cell.Name);                     // These parameters are part of the "Cell" Element Header

@@ -6,17 +6,17 @@ namespace libfco
     public class Group : IBinarySerializable
     {
         public string Name { get; set; }
-        public List<Cell> CellList { get; set; }
+        public List<Cell> Cells { get; set; }
 
         public Group(string in_Name)
         {
             Name = in_Name;
-            CellList = new List<Cell>();
-            CellList.Add(new Cell("New_Cell"));
+            Cells = new List<Cell>();
+            Cells.Add(new Cell("New_Cell"));
         }
         public Group()
         {
-            CellList = new List<Cell>();
+            Cells = new List<Cell>();
         }
         public void Read(BinaryObjectReader reader)
         {
@@ -27,10 +27,10 @@ namespace libfco
             int cellCount = reader.ReadInt32();
 
             //Read cells
-            CellList = new List<Cell>();
+            Cells = new List<Cell>();
             for (int c = 0; c < cellCount; c++)
             {
-                CellList.Add(reader.ReadObject<Cell>());
+                Cells.Add(reader.ReadObject<Cell>());
             }
         }
 
@@ -38,8 +38,8 @@ namespace libfco
         {
             Common.WriteStringTemp(writer, Name);
             // Cell Count
-            writer.Write(CellList.Count);
-            foreach (Cell cell in CellList)
+            writer.Write(Cells.Count);
+            foreach (Cell cell in Cells)
             {
                 writer.WriteObject(cell);
             }

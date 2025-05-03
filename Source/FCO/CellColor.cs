@@ -5,7 +5,6 @@ namespace libfco
 {
     public class CellColor : IBinarySerializable
     {
-
         public int Start { get; set; }
         public int End { get; set; }
         public int Type { get; set; }
@@ -22,7 +21,6 @@ namespace libfco
         /// <summary>
         /// Returns ArgbColor as a byte array
         /// </summary>
-        /// <returns></returns>
         public byte[] GetColorAsBytes()
         {
             byte[] bytes =
