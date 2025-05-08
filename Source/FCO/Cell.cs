@@ -19,8 +19,8 @@ namespace libfco
         public CellColor ExtraColor1 { get; set; }
         public CellColor ExtraColor2 { get; set; }
         public TextAlign Alignment { get; set; }
-        public List<CellColor> Highlights { get; set; }
-        public List<SubCell> SubCells { get; set; }
+        public List<CellColor> Highlights { get; set; } = new List<CellColor>();
+        public List<SubCell> SubCells { get; set; } = new List<SubCell>();
 
         public Cell()
         {
@@ -29,8 +29,6 @@ namespace libfco
             ExtraColor1 = new CellColor(1);
             ExtraColor2 = new CellColor(0);
             Message = [];
-            Highlights = new List<CellColor>();
-            SubCells = new List<SubCell>();
         }
         public Cell(string name) : this()
         {
