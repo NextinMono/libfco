@@ -8,6 +8,12 @@ namespace libfco
         public string Name { get; set; }
         public Vector2 Size { get; set; }
 
+        public TextureEntry(string in_TexName, Vector2 in_Size)
+        {
+            Name = in_TexName;
+            Size = in_Size;
+        }
+
         public void Read(BinaryObjectReader reader)
         {
             // Texture Name
